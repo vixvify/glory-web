@@ -12,6 +12,8 @@ import { movies as initialMovies } from "@/lib/data";
 import { Movie } from "@/core/domain/movie";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import { movieService, authService } from "@/lib/services";
+import { useAppStore } from "@/store/useStore";
 
 export default function HomePage() {
   const [allMovies, setAllMovies] = useState<Movie[]>(initialMovies);
@@ -23,44 +25,39 @@ export default function HomePage() {
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
   const [trailerMovie, setTrailerMovie] = useState<Movie | null>(null);
 
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const [currentUser, setCurrentUser] = useState<{ name: string; email: string } | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
+  const { currentUser, setCurrentUser, favorites, toggleFavorite, fetchFavorites, fetchCurrentUser } = useAppStore();
+
   useEffect(() => {
-    const savedFavs = localStorage.getItem("thaiflix_favorites");
-    if (savedFavs) {
-      setFavorites(JSON.parse(savedFavs));
-    } else {
-      const defaultFavs = ["1", "4", "8"];
-      setFavorites(defaultFavs);
-      localStorage.setItem("thaiflix_favorites", JSON.stringify(defaultFavs));
-    }
-
-    const savedUser = localStorage.getItem("thaiflix_user");
-    if (savedUser) {
-      setCurrentUser(JSON.parse(savedUser));
-    }
-
+    const fetchMovies = async () => {
+      try {
+        const moviesList = await movieService.getAllMovies();
+        setAllMovies(moviesList);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchMovies();
+    fetchFavorites();
+    fetchCurrentUser();
   }, []);
 
   const handleLoginSuccess = (user: { name: string; email: string }) => {
     setCurrentUser(user);
-    localStorage.setItem("thaiflix_user", JSON.stringify(user));
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    try {
+      await authService.logout();
+    } catch (err) {
+      console.error(err);
+    }
     setCurrentUser(null);
-    localStorage.removeItem("thaiflix_user");
   };
 
   const handleToggleFavorite = (movieId: string) => {
-    const nextFavorites = favorites.includes(movieId)
-      ? favorites.filter((id) => id !== movieId)
-      : [...favorites, movieId];
-    
-    setFavorites(nextFavorites);
-    localStorage.setItem("thaiflix_favorites", JSON.stringify(nextFavorites));
+    toggleFavorite(movieId);
   };
 
   const handleAddRating = (movieId: string, user: string, score: number) => {

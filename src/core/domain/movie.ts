@@ -15,3 +15,15 @@ export interface Movie {
   duration: string;
 }
 
+export interface CreateMovie {
+  title: string;
+  description: string;
+  category: string;
+  thumbnail: string;
+  youtubeUrl: string;
+  year: number;
+  matchRate: number;
+  ageRating: string;
+  duration: string;
+}
+

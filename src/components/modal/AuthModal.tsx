@@ -7,6 +7,9 @@ import LockIcon from "@mui/icons-material/Lock";
 import PersonIcon from "@mui/icons-material/Person";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import { parseSchema } from "@/lib/validation";
+import { registerUserSchema, loginUserSchema } from "@/core/schema/auth";
+import { authService } from "@/lib/services";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -24,34 +27,32 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModal
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!email.trim() || !password.trim()) {
-      setError("Please fill in all fields.");
-      return;
+    try {
+      if (isSignUp) {
+        const validated = parseSchema(registerUserSchema, { name, email, password });
+        const user = await authService.register({
+          name: validated.name,
+          email: validated.email,
+          password: validated.password,
+        });
+        onLoginSuccess({ name: user.name, email: user.email });
+      } else {
+        const validated = parseSchema(loginUserSchema, { email, password });
+        const user = await authService.login({
+          email: validated.email,
+          password: validated.password,
+        });
+        onLoginSuccess({ name: user.name, email: user.email });
+      }
+      onClose();
+      resetForm();
+    } catch (err: any) {
+      setError(err.message || "Authentication failed");
     }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-
-    if (isSignUp && !name.trim()) {
-      setError("Please enter your name.");
-      return;
-    }
-
-    const displayName = isSignUp ? name : email.split("@")[0];
-    const loggedUser = {
-      name: displayName.charAt(0).toUpperCase() + displayName.slice(1),
-      email: email,
-    };
-
-    onLoginSuccess(loggedUser);
-    onClose();
-    resetForm();
   };
 
   const handleGuestLogin = () => {
