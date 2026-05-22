@@ -1,58 +1,103 @@
 @import "tailwindcss";
 
 :root {
-  --background: #141414;
+  --theme-primary: #8b5cf6;
+  --theme-primary-hover: #7c3aed;
+  --theme-primary-rgb: 139, 92, 246;
+  --theme-bg: #09070f;
+  --theme-bg-rgb: 9, 7, 15;
+  --theme-card: #14111d;
+  --theme-card-hover: #1e1a2b;
   --foreground: #ffffff;
-  --netflix-red: #e50914;
+}
+
+[data-theme="cyan"] {
+  --theme-primary: #06b6d4;
+  --theme-primary-hover: #0891b2;
+  --theme-primary-rgb: 6, 182, 212;
+  --theme-bg: #050b11;
+  --theme-bg-rgb: 5, 11, 17;
+  --theme-card: #0f1624;
+  --theme-card-hover: #172237;
+}
+
+[data-theme="gold"] {
+  --theme-primary: #f59e0b;
+  --theme-primary-hover: #d97706;
+  --theme-primary-rgb: 245, 158, 11;
+  --theme-bg: #0a0805;
+  --theme-bg-rgb: 10, 8, 5;
+  --theme-card: #17120a;
+  --theme-card-hover: #261e12;
+}
+
+[data-theme="crimson"] {
+  --theme-primary: #e50914;
+  --theme-primary-hover: #b80710;
+  --theme-primary-rgb: 229, 9, 20;
+  --theme-bg: #0f0707;
+  --theme-bg-rgb: 15, 7, 7;
+  --theme-card: #1a1111;
+  --theme-card-hover: #2b1c1c;
 }
 
 @theme inline {
-  --color-background: var(--background);
+  --color-background: var(--theme-bg);
   --color-foreground: var(--foreground);
-  --color-brand: var(--netflix-red);
+  --color-brand: var(--theme-primary);
+  --color-brand-hover: var(--theme-primary-hover);
+  --color-card: var(--theme-card);
+  --color-card-hover: var(--theme-card-hover);
   --font-sans: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background-color: var(--background);
+  background-color: var(--theme-bg);
   color: var(--foreground);
   font-family: var(--font-sans);
   overflow-x: hidden;
   margin: 0;
   padding: 0;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
-/* Custom Scrollbar for a premium look */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #141414;
+  background: var(--theme-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333333;
+  background: var(--theme-card-hover);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555555;
+  background: var(--theme-primary);
 }
 
-/* Hide scrollbar utility for the horizontal rows but allow scrolling */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-/* Smooth scrolling transition */
 html {
   scroll-behavior: smooth;
 }
 
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shake 0.2s ease-in-out 2;
+}

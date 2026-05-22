@@ -13,6 +13,9 @@ interface NavbarProps {
   onCategoryChange: (cat: string | null) => void;
   showMyListOnly: boolean;
   onMyListOnlyChange: (val: boolean) => void;
+  currentUser: { name: string; email: string } | null;
+  onSignOut: () => void;
+  onSignInClick: () => void;
 }
 
 export default function Navbar({
@@ -22,9 +25,13 @@ export default function Navbar({
   onCategoryChange,
   showMyListOnly,
   onMyListOnlyChange,
+  currentUser,
+  onSignOut,
+  onSignInClick,
 }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -42,7 +49,6 @@ export default function Navbar({
   const handleNavClick = (category: string | null, myList: boolean = false) => {
     onCategoryChange(category);
     onMyListOnlyChange(myList);
-    // clear search when navigating categories
     onSearchChange("");
   };
 
@@ -50,21 +56,19 @@ export default function Navbar({
     <nav
       className={`fixed top-0 left-0 w-full z-50 flex items-center justify-between px-6 md:px-16 py-4 transition-all duration-500 ease-out ${
         isScrolled
-          ? "bg-[#141414]/90 backdrop-blur-md border-b border-zinc-800/40 shadow-xl shadow-black/20"
+          ? "bg-background/95 backdrop-blur-md border-b border-zinc-800/40 shadow-xl shadow-black/20"
           : "bg-transparent"
       }`}
     >
       <div className="flex items-center gap-8">
-        {/* THAIFLIX BRAND LOGO */}
         <div
           onClick={() => handleNavClick(null, false)}
-          className="text-3xl font-extrabold tracking-tighter text-[#e50914] cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95"
-          style={{ textShadow: "0 0 10px rgba(229,9,20,0.3)" }}
+          className="text-3xl font-extrabold tracking-tighter text-brand cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95"
+          style={{ textShadow: `0 0 10px rgba(var(--theme-primary-rgb),0.3)` }}
         >
           THAIFLIX
         </div>
 
-        {/* NAVIGATION LINKS */}
         <div className="hidden md:flex items-center gap-6 text-sm text-zinc-300">
           <button
             onClick={() => handleNavClick(null, false)}
@@ -109,13 +113,11 @@ export default function Navbar({
         </div>
       </div>
 
-      {/* SEARCH AND PROFILE UTILITIES */}
-      <div className="flex items-center gap-6">
-        {/* EXPANDABLE SEARCH */}
+      <div className="flex items-center gap-4 md:gap-6">
         <div
           className={`flex items-center gap-2 px-2 py-1 rounded border transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
             isSearchExpanded
-              ? "w-48 md:w-64 bg-black/60 border-zinc-600 scale-100 opacity-100"
+              ? "w-40 md:w-64 bg-black/60 border-zinc-600 scale-100 opacity-100"
               : "w-8 bg-transparent border-transparent"
           }`}
         >
@@ -147,19 +149,50 @@ export default function Navbar({
           )}
         </div>
 
-        {/* NOTIFICATIONS */}
         <button className="text-zinc-300 hover:text-white transition-colors relative cursor-pointer hidden sm:block">
           <NotificationsIcon className="text-xl" />
-          <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#e50914] rounded-full" />
+          <span className="absolute -top-1 -right-1 w-2 h-2 bg-brand rounded-full" />
         </button>
 
-        {/* USER PROFILE */}
-        <div className="flex items-center gap-2 cursor-pointer group">
-          <AccountCircleIcon className="text-zinc-300 group-hover:text-white text-2xl transition-colors" />
-          <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-t-zinc-400 border-l-transparent border-r-transparent group-hover:border-t-white transition-colors" />
-        </div>
+        {currentUser ? (
+          <div className="relative">
+            <button
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="flex items-center gap-1.5 cursor-pointer group"
+            >
+              <div className="w-8 h-8 rounded-full bg-brand flex items-center justify-center text-white font-bold text-sm shadow-md shadow-brand/20">
+                {currentUser.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-t-zinc-400 border-l-transparent border-r-transparent group-hover:border-t-white transition-colors" />
+            </button>
+
+            {showProfileMenu && (
+              <div className="absolute right-0 mt-3 w-48 bg-card rounded-xl border border-zinc-800 p-2 shadow-xl animate-fade-in z-50">
+                <div className="px-3 py-2 border-b border-zinc-800/80 mb-1">
+                  <p className="text-xs text-white font-semibold truncate">{currentUser.name}</p>
+                  <p className="text-[10px] text-zinc-500 truncate mt-0.5">{currentUser.email}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    onSignOut();
+                    setShowProfileMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-zinc-800/60 rounded-lg cursor-pointer transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={onSignInClick}
+            className="px-4 py-1.5 rounded-lg bg-brand text-white font-semibold text-xs hover:bg-brand-hover cursor-pointer active:scale-95 transition-all shadow-md shadow-brand/10"
+          >
+            Sign In
+          </button>
+        )}
       </div>
     </nav>
   );
 }
-

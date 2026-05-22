@@ -5,7 +5,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
 import StarIcon from "@mui/icons-material/Star";
-import { Movie } from "../core/domain/movie";
+import { Movie } from "../../core/domain/movie";
 
 interface Props {
   movie: Movie;
@@ -30,7 +30,6 @@ export default function MovieCard({
       onClick={onClick}
       className="group relative cursor-pointer bg-zinc-900 rounded-xl overflow-hidden shadow-lg border border-zinc-800/80 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-105 md:hover:scale-112 hover:shadow-2xl hover:shadow-black/50 hover:border-zinc-700/60 z-10 hover:z-20 flex flex-col h-full"
     >
-      {/* Landscape Image wrapper */}
       <div className="relative aspect-video w-full overflow-hidden bg-zinc-950">
         <Image
           src={movie.thumbnail}
@@ -39,20 +38,17 @@ export default function MovieCard({
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-108"
         />
-        {/* Play Icon Hover Overlay */}
         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
           <div className="w-12 h-12 rounded-full bg-white/90 text-black flex items-center justify-center shadow-lg transform scale-75 group-hover:scale-100 transition-transform duration-300">
             <PlayArrowIcon className="text-2xl ml-0.5" />
           </div>
         </div>
 
-        {/* Category badge */}
         <span className="absolute top-2 left-2 px-2 py-0.5 text-[9px] font-bold tracking-wider bg-black/60 backdrop-blur-md text-zinc-300 border border-zinc-700/50 rounded uppercase">
           {movie.category}
         </span>
       </div>
 
-      {/* Info details body */}
       <div className="p-4 flex flex-col flex-1 justify-between gap-3 bg-[#181818]">
         <div className="space-y-1">
           <div className="flex items-start justify-between gap-2">
@@ -67,7 +63,6 @@ export default function MovieCard({
           </p>
         </div>
 
-        {/* Row metadata & Quick tools */}
         <div className="flex items-center justify-between gap-2 border-t border-zinc-800/80 pt-2 text-[11px] md:text-xs">
           <div className="flex items-center gap-1.5 font-bold">
             <span className="text-emerald-400 font-bold shrink-0">
@@ -84,7 +79,6 @@ export default function MovieCard({
             </div>
           </div>
 
-          {/* Quick interactive actions */}
           <div className="flex items-center gap-1.5">
             <button
               onClick={(e) => {
@@ -101,11 +95,10 @@ export default function MovieCard({
                 e.stopPropagation();
                 onToggleFavorite(e);
               }}
-              className={`p-1 rounded-full border transition-all cursor-pointer ${
-                isFavorite
+              className={`p-1 rounded-full border transition-all cursor-pointer ${isFavorite
                   ? "bg-zinc-800 border-zinc-500 text-green-400 hover:border-white"
                   : "bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
-              }`}
+                }`}
               title={isFavorite ? "Remove from My List" : "Add to My List"}
             >
               {isFavorite ? <CheckIcon className="text-base" /> : <AddIcon className="text-base" />}

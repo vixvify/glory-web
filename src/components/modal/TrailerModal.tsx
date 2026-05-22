@@ -16,7 +16,6 @@ export default function TrailerModal({
   youtubeUrl,
   movieTitle,
 }: TrailerModalProps) {
-  // Prevent background scrolling when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -30,7 +29,6 @@ export default function TrailerModal({
 
   if (!isOpen) return null;
 
-  // Extract YouTube video ID
   const getYouTubeEmbedUrl = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.match(regExp);
@@ -39,7 +37,6 @@ export default function TrailerModal({
     if (videoId) {
       return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
     }
-    // Return standard fallback if unable to parse
     return "https://www.youtube.com/embed/";
   };
 
@@ -53,7 +50,6 @@ export default function TrailerModal({
       />
 
       <div className="relative w-full max-w-5xl bg-[#181818] rounded-2xl overflow-hidden shadow-2xl border border-zinc-800 animate-scale-up z-10">
-        {/* Header bar */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-[#181818]">
           <h3 className="text-lg font-bold text-white tracking-wide">
             Trailer - {movieTitle}
@@ -66,7 +62,6 @@ export default function TrailerModal({
           </button>
         </div>
 
-        {/* Video Player */}
         <div className="relative w-full pb-[56.25%] bg-black">
           <iframe
             src={embedUrl}

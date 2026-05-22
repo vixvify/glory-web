@@ -1,7 +1,7 @@
 "use client";
 
 import { Movie } from "@/core/domain/movie";
-import MovieCard from "./MovieCard";
+import MovieCard from "@/components/movie/MovieCard";
 
 interface Props {
   movies: Movie[];

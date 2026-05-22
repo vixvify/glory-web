@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Navbar from "@/components/Navbar";
-import MovieHero from "@/components/MovieHero";
-import MovieGrid from "@/components/MovieGrid";
-import MovieCard from "@/components/MovieCard";
-import MovieDetailsModal from "@/components/MovieDetailsModal";
-import TrailerModal from "@/components/TrailerModal";
+import Navbar from "@/components/ui/Navbar";
+import MovieHero from "@/components/movie/MovieHero";
+import MovieGrid from "@/components/movie/MovieGrid";
+import MovieCard from "@/components/movie/MovieCard";
+import MovieDetailsModal from "@/components/movie/MovieDetailsModal";
+import TrailerModal from "@/components/modal/TrailerModal";
+import AuthModal from "@/components/modal/AuthModal";
 import { movies as initialMovies } from "@/lib/data";
 import { Movie } from "@/core/domain/movie";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
@@ -18,26 +19,40 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showMyListOnly, setShowMyListOnly] = useState(false);
   
-  // Modals state
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
   const [trailerMovie, setTrailerMovie] = useState<Movie | null>(null);
 
-  // Favorites (My List) state - init with items for immediate visual appeal
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [currentUser, setCurrentUser] = useState<{ name: string; email: string } | null>(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   useEffect(() => {
-    // Load favorites from local storage
-    const saved = localStorage.getItem("thaiflix_favorites");
-    if (saved) {
-      setFavorites(JSON.parse(saved));
+    const savedFavs = localStorage.getItem("thaiflix_favorites");
+    if (savedFavs) {
+      setFavorites(JSON.parse(savedFavs));
     } else {
-      // Pre-fill some favorites so the list row is populated on first load
       const defaultFavs = ["1", "4", "8"];
       setFavorites(defaultFavs);
       localStorage.setItem("thaiflix_favorites", JSON.stringify(defaultFavs));
     }
+
+    const savedUser = localStorage.getItem("thaiflix_user");
+    if (savedUser) {
+      setCurrentUser(JSON.parse(savedUser));
+    }
+
   }, []);
+
+  const handleLoginSuccess = (user: { name: string; email: string }) => {
+    setCurrentUser(user);
+    localStorage.setItem("thaiflix_user", JSON.stringify(user));
+  };
+
+  const handleSignOut = () => {
+    setCurrentUser(null);
+    localStorage.removeItem("thaiflix_user");
+  };
 
   const handleToggleFavorite = (movieId: string) => {
     const nextFavorites = favorites.includes(movieId)
@@ -67,12 +82,10 @@ export default function HomePage() {
     setIsPlayingTrailer(true);
   };
 
-  // Get active movie details (with updated ratings if any were added)
   const activeMovieForModal = selectedMovie
     ? allMovies.find((m) => m.id === selectedMovie.id) || selectedMovie
     : null;
 
-  // Filter movies based on inputs
   const getFilteredMovies = () => {
     let list = allMovies;
 
@@ -97,11 +110,9 @@ export default function HomePage() {
 
   const filteredMovies = getFilteredMovies();
   const isBrowsingRowView = !searchQuery && !selectedCategory && !showMyListOnly;
-  const heroMovie = allMovies[0]; // Interstellar
 
   return (
-    <div className="min-h-screen bg-[#141414] text-white flex flex-col font-sans select-none pb-16">
-      {/* Top Navbar */}
+    <div className="min-h-screen bg-background text-white flex flex-col font-sans select-none pb-16 transition-colors duration-450">
       <Navbar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -109,20 +120,20 @@ export default function HomePage() {
         onCategoryChange={setSelectedCategory}
         showMyListOnly={showMyListOnly}
         onMyListOnlyChange={setShowMyListOnly}
+        currentUser={currentUser}
+        onSignOut={handleSignOut}
+        onSignInClick={() => setIsAuthOpen(true)}
       />
 
       {isBrowsingRowView ? (
-        /* Immersive Netflix Row View Homepage */
         <main className="flex-1 flex flex-col">
           <MovieHero
-            movie={heroMovie}
-            onPlayClick={() => handlePlayTrailer(heroMovie)}
-            onInfoClick={() => setSelectedMovie(heroMovie)}
+            movies={allMovies}
+            onPlayClick={handlePlayTrailer}
+            onInfoClick={setSelectedMovie}
           />
 
-          {/* Rows container */}
           <div className="relative z-20 px-6 md:px-16 space-y-12 -mt-16 md:-mt-28">
-            {/* Row 1: Trending Now */}
             <MovieRow
               title="Trending Now"
               movies={allMovies}
@@ -132,7 +143,6 @@ export default function HomePage() {
               onToggleFavorite={handleToggleFavorite}
             />
 
-            {/* Row 2: Action & Suspense */}
             <MovieRow
               title="Action & Suspense"
               movies={allMovies.filter((m) => m.category === "Action" || m.category === "Thriller")}
@@ -142,7 +152,6 @@ export default function HomePage() {
               onToggleFavorite={handleToggleFavorite}
             />
 
-            {/* Row 3: Sci-Fi Blockbusters */}
             <MovieRow
               title="Sci-Fi & Space Exploration"
               movies={allMovies.filter((m) => m.category === "Sci-Fi")}
@@ -152,7 +161,6 @@ export default function HomePage() {
               onToggleFavorite={handleToggleFavorite}
             />
 
-            {/* Row 4: Horror & Thrillers */}
             <MovieRow
               title="Chilling Horrors"
               movies={allMovies.filter((m) => m.category === "Horror")}
@@ -162,7 +170,6 @@ export default function HomePage() {
               onToggleFavorite={handleToggleFavorite}
             />
 
-            {/* Row 5: My List (Only show if not empty) */}
             {allMovies.filter((m) => favorites.includes(m.id)).length > 0 && (
               <MovieRow
                 title="My List"
@@ -176,15 +183,14 @@ export default function HomePage() {
           </div>
         </main>
       ) : (
-        /* Dynamic Grid View (Search, Category Filters, or 'My List' click) */
         <main className="flex-1 px-6 md:px-16 pt-28 space-y-8 animate-fade-in">
           <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
             <h2 className="text-2xl md:text-3xl font-extrabold tracking-wide">
               {searchQuery
                 ? `Search Results for "${searchQuery}"`
                 : showMyListOnly
-                ? "My List"
-                : `${selectedCategory} Movies`}
+                  ? "My List"
+                  : `${selectedCategory} Movies`}
             </h2>
             <span className="text-sm text-zinc-400">
               {filteredMovies.length} {filteredMovies.length === 1 ? "title" : "titles"} found
@@ -219,7 +225,6 @@ export default function HomePage() {
         </main>
       )}
 
-      {/* Details Modal */}
       {activeMovieForModal && (
         <MovieDetailsModal
           isOpen={!!selectedMovie}
@@ -229,10 +234,11 @@ export default function HomePage() {
           onToggleFavorite={handleToggleFavorite}
           onPlayTrailer={() => handlePlayTrailer(activeMovieForModal)}
           onAddRating={handleAddRating}
+          currentUser={currentUser}
+          onSignInClick={() => setIsAuthOpen(true)}
         />
       )}
 
-      {/* YouTube Video Trailer Playback Modal */}
       {trailerMovie && (
         <TrailerModal
           isOpen={isPlayingTrailer}
@@ -241,11 +247,16 @@ export default function HomePage() {
           movieTitle={trailerMovie.title}
         />
       )}
+
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </div>
   );
 }
 
-/* Local Horizontal Scrolling Movie Row Component */
 interface MovieRowProps {
   title: string;
   movies: Movie[];
@@ -271,7 +282,6 @@ function MovieRow({
     if (rowRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = rowRef.current;
       setShowLeftArrow(scrollLeft > 5);
-      // Allow minor sub-pixel discrepancy
       setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 5);
     }
   };
@@ -280,7 +290,6 @@ function MovieRow({
     const el = rowRef.current;
     if (el) {
       el.addEventListener("scroll", checkScrollArrows);
-      // Trigger once on init
       setTimeout(checkScrollArrows, 200);
     }
     return () => el?.removeEventListener("scroll", checkScrollArrows);
@@ -298,14 +307,11 @@ function MovieRow({
 
   return (
     <div className="space-y-2 group/row relative">
-      {/* Row title */}
       <h3 className="text-base md:text-xl font-bold text-zinc-100 tracking-wide hover:text-white cursor-pointer transition-colors duration-200 pl-1 inline-block">
         {title}
       </h3>
 
-      {/* Horizontal Carousel */}
       <div className="relative">
-        {/* Left scroll control arrow */}
         {showLeftArrow && (
           <button
             onClick={() => handleScroll("left")}
@@ -315,7 +321,6 @@ function MovieRow({
           </button>
         )}
 
-        {/* Scroll list */}
         <div
           ref={rowRef}
           className="flex overflow-x-auto gap-4 py-4 px-1.5 no-scrollbar scroll-smooth snap-x snap-mandatory"
@@ -336,7 +341,6 @@ function MovieRow({
           ))}
         </div>
 
-        {/* Right scroll control arrow */}
         {showRightArrow && (
           <button
             onClick={() => handleScroll("right")}
@@ -349,4 +353,3 @@ function MovieRow({
     </div>
   );
 }
-
