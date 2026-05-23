@@ -34,6 +34,7 @@ export default function AdminPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
   const [deleteMovieId, setDeleteMovieId] = useState<string | null>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
 
   const {
     register,
@@ -59,6 +60,7 @@ export default function AdminPage() {
 
   const handleOpenAdd = () => {
     setEditingMovie(null);
+    setSelectedFileName(null);
     reset({
       title: "",
       description: "",
@@ -75,6 +77,7 @@ export default function AdminPage() {
 
   const handleOpenEdit = (movie: Movie) => {
     setEditingMovie(movie);
+    setSelectedFileName(null);
     setValue("title", movie.title);
     setValue("description", movie.description);
     setValue("category", movie.category);
@@ -533,16 +536,41 @@ export default function AdminPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-300">Thumbnail URL</label>
-                  <input
-                    type="text"
-                    placeholder="https://images.unsplash.com/..."
-                    {...register("thumbnail", { required: "Image URL is required" })}
-                    className={`w-full bg-black/40 border ${errors.thumbnail ? "border-red-500" : "border-zinc-800"
-                      } rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand transition-colors`}
-                  />
+                  <label className="text-xs font-semibold text-zinc-300">Cover Image</label>
+                  <div className="relative group/file">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      {...register("thumbnail", {
+                        required: editingMovie ? false : "Cover image is required",
+                        onChange: (e) => {
+                          const files = e.target.files;
+                          if (files && files.length > 0) {
+                            setSelectedFileName(files[0].name);
+                          } else {
+                            setSelectedFileName(null);
+                          }
+                        }
+                      })}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    <div className={`w-full bg-black/40 border ${errors.thumbnail ? "border-red-500" : "border-zinc-800 group-hover/file:border-brand"
+                      } rounded-xl px-4 py-3 text-sm text-zinc-400 flex items-center justify-between transition-colors`}>
+                      <span className={selectedFileName ? "text-white font-medium truncate max-w-[70%]" : "text-zinc-400"}>
+                        {selectedFileName || "Upload cover image file..."}
+                      </span>
+                      <span className="px-3 py-1 bg-zinc-800 text-zinc-300 rounded-lg text-xs font-semibold group-hover/file:bg-brand group-hover/file:text-white transition-colors">
+                        Browse
+                      </span>
+                    </div>
+                  </div>
                   {errors.thumbnail && (
                     <span className="text-[10px] text-red-500 block pl-1 font-semibold">{errors.thumbnail.message}</span>
+                  )}
+                  {editingMovie && typeof editingMovie.thumbnail === "string" && (
+                    <p className="text-[10px] text-zinc-500 pl-1 leading-relaxed">
+                      Current: <span className="text-brand font-medium truncate max-w-[200px] inline-block align-bottom">{editingMovie.thumbnail.split("/").pop()}</span> (Leave blank to keep existing)
+                    </p>
                   )}
                 </div>
 

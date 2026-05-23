@@ -24,12 +24,55 @@ export class MovieRepositoryImpl implements MovieRepository {
     }
     async createMovie(movie: CreateMovie): Promise<ApiResponse<Movie>> {
         const validated = parseSchema(createMovieSchema, movie);
-        const response = await httpClient.post<Movie>("/movie", validated);
+        const formData = new FormData();
+        formData.append("title", validated.title);
+        formData.append("description", validated.description);
+        formData.append("category", validated.category);
+        formData.append("youtubeUrl", validated.youtubeUrl);
+        formData.append("year", String(validated.year));
+        formData.append("matchRate", String(validated.matchRate));
+        formData.append("ageRating", validated.ageRating);
+        formData.append("duration", validated.duration);
+
+        if (validated.thumbnail instanceof File) {
+            formData.append("image", validated.thumbnail);
+        } else if (validated.thumbnail && (validated.thumbnail as any).length > 0) {
+            formData.append("image", (validated.thumbnail as any)[0]);
+        }
+
+        const response = await httpClient.post<Movie>("/movie", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
         return response;
     }
     async updateMovie(movie: Movie): Promise<ApiResponse<Movie>> {
         const validated = parseSchema(movieSchema, movie);
-        const response = await httpClient.put<Movie>(`/movie/${validated.id}`, validated);
+        const formData = new FormData();
+        formData.append("id", validated.id);
+        formData.append("title", validated.title);
+        formData.append("description", validated.description);
+        formData.append("category", validated.category);
+        formData.append("youtubeUrl", validated.youtubeUrl);
+        formData.append("year", String(validated.year));
+        formData.append("matchRate", String(validated.matchRate));
+        formData.append("ageRating", validated.ageRating);
+        formData.append("duration", validated.duration);
+
+        if (validated.thumbnail instanceof File) {
+            formData.append("image", validated.thumbnail);
+        } else if (validated.thumbnail && (validated.thumbnail as any).length > 0 && typeof validated.thumbnail !== "string") {
+            formData.append("image", (validated.thumbnail as any)[0]);
+        } else if (typeof validated.thumbnail === "string") {
+            formData.append("imageUrl", validated.thumbnail);
+        }
+
+        const response = await httpClient.put<Movie>(`/movie/${validated.id}`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
         return response;
     }
     async deleteMovie(id: string): Promise<ApiResponse<Movie>> {

@@ -10,7 +10,7 @@ export const movieSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().min(1, "Description is required"),
   category: z.string().min(1, "Category is required"),
-  thumbnail: z.string().url("Must be a valid URL"),
+  thumbnail: z.any(),
   youtubeUrl: z.string().url("Must be a valid URL"),
   views: z.number().nonnegative(),
   ratings: z.array(ratingSchema),
