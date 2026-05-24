@@ -1,9 +1,9 @@
 import { ApiResponse } from "../interface/response";
 import { MovieRepository } from "@/core/ports/movie.repository";
-import { Movie, CreateMovie } from "@/core/domain/movie";
+import { Movie, CreateMovie, UpdateMovie } from "@/core/domain/movie";
 import httpClient from "@/lib/http";
 import { parseSchema } from "@/lib/validation";
-import { movieSchema, createMovieSchema } from "@/core/schema/movie";
+import { updateMovieSchema, createMovieSchema } from "@/core/schema/movie";
 
 export class MovieRepositoryImpl implements MovieRepository {
     async getAllMovies(): Promise<ApiResponse<Movie[]>> {
@@ -47,10 +47,9 @@ export class MovieRepositoryImpl implements MovieRepository {
         });
         return response;
     }
-    async updateMovie(movie: Movie): Promise<ApiResponse<Movie>> {
-        const validated = parseSchema(movieSchema, movie);
+    async updateMovie(id: string, movie: UpdateMovie): Promise<ApiResponse<Movie>> {
+        const validated = parseSchema(updateMovieSchema, movie);
         const formData = new FormData();
-        formData.append("id", validated.id);
         formData.append("title", validated.title);
         formData.append("description", validated.description);
         formData.append("category", validated.category);
@@ -68,15 +67,15 @@ export class MovieRepositoryImpl implements MovieRepository {
             formData.append("imageUrl", validated.thumbnail);
         }
 
-        const response = await httpClient.put<Movie>(`/movie/${validated.id}`, formData, {
+        const response = await httpClient.put<Movie>(`/movie/${id}`, formData, {
             headers: {
                 "Content-Type": "multipart/form-data",
             },
         });
         return response;
     }
-    async deleteMovie(id: string): Promise<ApiResponse<Movie>> {
-        const response = await httpClient.delete<Movie>(`/movie/${id}`);
+    async deleteMovie(id: string): Promise<ApiResponse<void>> {
+        const response = await httpClient.delete<void>(`/movie/${id}`);
         return response;
     }
     async getFavorites(): Promise<ApiResponse<string[]>> {

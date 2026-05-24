@@ -1,4 +1,14 @@
+import { User } from "./user";
+import { Movie } from "./movie";
+
 export interface Rating {
-  user: string;
-  score: number;
+  id: string;
+  movieId: string;
+  userId: string;
+  stars: number;
+  comment?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  movie: Movie;
+  user: User;
 }

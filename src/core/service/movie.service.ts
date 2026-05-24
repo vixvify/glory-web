@@ -1,4 +1,4 @@
-import { Movie, CreateMovie } from "../domain/movie";
+import { Movie, CreateMovie, UpdateMovie } from "../domain/movie";
 import { MovieRepository } from "../ports/movie.repository";
 
 export class MovieService {
@@ -38,14 +38,14 @@ export class MovieService {
         }
         return response.data;
     }
-    async updateMovie(movie: Movie): Promise<Movie> {
-        const response = await this.movieRepository.updateMovie(movie);
+    async updateMovie(id: string, movie: UpdateMovie): Promise<Movie> {
+        const response = await this.movieRepository.updateMovie(id, movie);
         if (response.error) {
             throw response.error;
         }
         return response.data;
     }
-    async deleteMovie(id: string): Promise<Movie> {
+    async deleteMovie(id: string): Promise<void> {
         const response = await this.movieRepository.deleteMovie(id);
         if (response.error) {
             throw response.error;

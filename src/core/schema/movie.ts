@@ -20,6 +20,12 @@ export const movieSchema = z.object({
   duration: z.string().min(1, "Duration is required"),
 });
 
+export const updateMovieSchema = movieSchema.omit({
+  id: true,
+  views: true,
+  ratings: true,
+});
+
 export const createMovieSchema = movieSchema.omit({
   id: true,
   views: true,
