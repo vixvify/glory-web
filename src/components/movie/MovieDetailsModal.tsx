@@ -10,6 +10,7 @@ import StarBorderIcon from "@mui/icons-material/StarBorder";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import { Movie } from "@/core/domain/movie";
+import { User } from "@/core/domain/user";
 
 interface MovieDetailsModalProps {
   isOpen: boolean;
@@ -18,8 +19,8 @@ interface MovieDetailsModalProps {
   isFavorite: boolean;
   onToggleFavorite: (movieId: string) => void;
   onPlayTrailer: () => void;
-  onAddRating: (movieId: string, user: string, score: number) => void;
-  currentUser: { name: string; email: string } | null;
+  onAddRating: (movieId: string, user: User, score: number) => void;
+  currentUser: User | null;
   onSignInClick: () => void;
 }
 
@@ -52,14 +53,14 @@ export default function MovieDetailsModal({
 
   if (!isOpen) return null;
 
-  const totalScore = movie.ratings.reduce((sum, r) => sum + r.score, 0);
+  const totalScore = movie.ratings.reduce((sum, r) => sum + r.stars, 0);
   const averageRating = movie.ratings.length > 0 ? totalScore / movie.ratings.length : 0;
 
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
 
-    onAddRating(movie.id, currentUser.name || currentUser.email || "User", reviewScore);
+    onAddRating(movie.id, currentUser, reviewScore);
     setIsSubmitted(true);
   };
 
@@ -89,7 +90,7 @@ export default function MovieDetailsModal({
               <h2 className="text-2xl md:text-5xl font-extrabold text-white tracking-wide drop-shadow-md mb-4">
                 {movie.title}
               </h2>
-              
+
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   onClick={onPlayTrailer}
@@ -101,11 +102,10 @@ export default function MovieDetailsModal({
 
                 <button
                   onClick={() => onToggleFavorite(movie.id)}
-                  className={`flex items-center justify-center w-10 h-10 rounded-full border transition-all cursor-pointer ${
-                    isFavorite
-                      ? "bg-zinc-800 border-zinc-400 text-emerald-400 hover:border-white"
-                      : "bg-[#181818]/60 border-zinc-500 text-white hover:border-white hover:bg-zinc-800"
-                  }`}
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border transition-all cursor-pointer ${isFavorite
+                    ? "bg-zinc-800 border-zinc-400 text-emerald-400 hover:border-white"
+                    : "bg-[#181818]/60 border-zinc-500 text-white hover:border-white hover:bg-zinc-800"
+                    }`}
                   title={isFavorite ? "Remove from My List" : "Add to My List"}
                 >
                   {isFavorite ? <CheckIcon className="text-lg" /> : <AddIcon className="text-lg" />}
@@ -155,12 +155,12 @@ export default function MovieDetailsModal({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <span className="text-sm font-semibold text-zinc-200 truncate">
-                            {rating.user}
+                            {rating.user.name}
                           </span>
                           <div className="flex items-center gap-0.5 text-amber-500 text-xs">
                             {Array.from({ length: 5 }).map((_, i) => (
                               <span key={i}>
-                                {i < rating.score ? (
+                                {i < rating.stars ? (
                                   <StarIcon className="text-sm" />
                                 ) : (
                                   <StarBorderIcon className="text-sm text-zinc-700" />
@@ -170,7 +170,7 @@ export default function MovieDetailsModal({
                           </div>
                         </div>
                         <p className="text-xs text-zinc-400 font-light italic">
-                          "Gave it a score of {rating.score}/5 stars."
+                          "Gave it a score of {rating.stars}"
                         </p>
                       </div>
                     </div>

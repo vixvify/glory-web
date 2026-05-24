@@ -9,12 +9,13 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { parseSchema } from "@/lib/validation";
 import { registerUserSchema, loginUserSchema } from "@/core/schema/auth";
-import { authService } from "@/infra/container";
+import { authService, movieService } from "@/infra/container";
+import { User } from "@/core/domain/user";
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLoginSuccess: (user: { name: string; email: string }) => void;
+  onLoginSuccess: (user: User) => void;
 }
 
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
@@ -39,14 +40,14 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModal
           email: validated.email,
           password: validated.password,
         });
-        onLoginSuccess({ name: user.name, email: user.email });
+        onLoginSuccess(user);
       } else {
         const validated = parseSchema(loginUserSchema, { email, password });
         const user = await authService.login({
           email: validated.email,
           password: validated.password,
         });
-        onLoginSuccess({ name: user.name, email: user.email });
+        onLoginSuccess(user);
       }
       onClose();
       resetForm();
@@ -56,9 +57,11 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModal
   };
 
   const handleGuestLogin = () => {
-    const guestUser = {
+    const guestUser: User = {
       name: "Guest",
       email: "guest@gmail.com",
+      id: "guest",
+      role: "user"
     };
     onLoginSuccess(guestUser);
     onClose();

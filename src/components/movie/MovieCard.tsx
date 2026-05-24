@@ -22,7 +22,7 @@ export default function MovieCard({
   isFavorite,
   onToggleFavorite,
 }: Props) {
-  const totalScore = movie.ratings.reduce((sum, r) => sum + r.score, 0);
+  const totalScore = movie.ratings.reduce((sum, r) => sum + r.stars, 0);
   const averageRating = movie.ratings.length > 0 ? totalScore / movie.ratings.length : 0;
 
   return (
@@ -96,8 +96,8 @@ export default function MovieCard({
                 onToggleFavorite(e);
               }}
               className={`p-1 rounded-full border transition-all cursor-pointer ${isFavorite
-                  ? "bg-zinc-800 border-zinc-500 text-green-400 hover:border-white"
-                  : "bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                ? "bg-zinc-800 border-zinc-500 text-green-400 hover:border-white"
+                : "bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
                 }`}
               title={isFavorite ? "Remove from My List" : "Add to My List"}
             >

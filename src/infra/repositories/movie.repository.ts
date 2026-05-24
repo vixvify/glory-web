@@ -32,7 +32,7 @@ export class MovieRepositoryImpl implements MovieRepository {
         formData.append("year", String(validated.year));
         formData.append("matchRate", String(validated.matchRate));
         formData.append("ageRating", validated.ageRating);
-        formData.append("duration", validated.duration);
+        formData.append("duration", validated.duration.toString());
 
         if (validated.thumbnail instanceof File) {
             formData.append("image", validated.thumbnail);
@@ -57,7 +57,7 @@ export class MovieRepositoryImpl implements MovieRepository {
         formData.append("year", String(validated.year));
         formData.append("matchRate", String(validated.matchRate));
         formData.append("ageRating", validated.ageRating);
-        formData.append("duration", validated.duration);
+        formData.append("duration", validated.duration.toString());
 
         if (validated.thumbnail instanceof File) {
             formData.append("image", validated.thumbnail);

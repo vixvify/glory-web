@@ -1,10 +1,11 @@
 import { create } from "zustand";
 import { movieService, authService } from "@/infra/container";
+import { User } from "@/core/domain/user";
 
 interface AppState {
-  currentUser: { name: string; email: string } | null;
+  currentUser: User | null;
   favorites: string[];
-  setCurrentUser: (user: { name: string; email: string } | null) => void;
+  setCurrentUser: (user: User | null) => void;
   setFavorites: (favorites: string[]) => void;
   fetchFavorites: () => Promise<void>;
   toggleFavorite: (movieId: string) => Promise<void>;

@@ -17,7 +17,7 @@ export const movieSchema = z.object({
   year: z.number().int().min(1900).max(2100),
   matchRate: z.number().min(0).max(100),
   ageRating: z.string().min(1, "Age rating is required"),
-  duration: z.string().min(1, "Duration is required"),
+  duration: z.number().min(1, "Duration is required"),
 });
 
 export const updateMovieSchema = movieSchema.omit({

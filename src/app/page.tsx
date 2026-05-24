@@ -9,6 +9,7 @@ import MovieDetailsModal from "@/components/movie/MovieDetailsModal";
 import TrailerModal from "@/components/modal/TrailerModal";
 import AuthModal from "@/components/modal/AuthModal";
 import { Movie } from "@/core/domain/movie";
+import { User } from "@/core/domain/user";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { movieService, authService } from "@/infra/container";
@@ -42,7 +43,7 @@ export default function HomePage() {
     fetchCurrentUser();
   }, []);
 
-  const handleLoginSuccess = (user: { name: string; email: string }) => {
+  const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
   };
 
@@ -59,15 +60,32 @@ export default function HomePage() {
     toggleFavorite(movieId);
   };
 
-  const handleAddRating = (movieId: string, user: string, score: number) => {
+  const handleAddRating = (
+    movieId: string,
+    user: User,
+    stars: number
+  ) => {
     setAllMovies((prevMovies) =>
       prevMovies.map((movie) => {
         if (movie.id === movieId) {
           return {
             ...movie,
-            ratings: [...movie.ratings, { user, score }],
+            ratings: [
+              ...movie.ratings,
+              {
+                id: crypto.randomUUID(),
+                movieId,
+                userId: user.id,
+                stars,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                movie,
+                user,
+              },
+            ],
           };
         }
+
         return movie;
       })
     );

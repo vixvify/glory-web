@@ -21,7 +21,7 @@ export interface CreateMovie {
   title: string;
   description: string;
   category: string;
-  thumbnail: File;
+  thumbnail: File | null;
   youtubeUrl: string;
   year: number;
   matchRate: number;

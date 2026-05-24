@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 import Navbar from "@/components/ui/Navbar";
-import { Movie } from "@/core/domain/movie";
-import { movies as initialMovies } from "@/lib/data";
+import { Movie, CreateMovie, UpdateMovie } from "@/core/domain/movie";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -18,11 +17,22 @@ import MovieIcon from "@mui/icons-material/Movie";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import StarIcon from "@mui/icons-material/Star";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import { CreateMovie } from "@/core/domain/movie";
 import { parseSchema } from "@/lib/validation";
 import { createMovieSchema } from "@/core/schema/movie";
 import { movieService, authService } from "@/infra/container";
 import { useAppStore } from "@/store/useStore";
+
+type MovieForm = {
+  title: string;
+  description: string;
+  category: string;
+  thumbnail?: File | null;
+  youtubeUrl: string;
+  year: number;
+  matchRate: number;
+  ageRating: string;
+  duration: number;
+};
 
 export default function AdminPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -32,7 +42,8 @@ export default function AdminPage() {
   const { currentUser, setCurrentUser, fetchCurrentUser } = useAppStore();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
+  const [editingMovie, setEditingMovie] = useState<UpdateMovie | null>(null);
+  const [editingMovieId, setEditingMovieId] = useState<string | null>(null);
   const [deleteMovieId, setDeleteMovieId] = useState<string | null>(null);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
 
@@ -42,7 +53,7 @@ export default function AdminPage() {
     setValue,
     reset,
     formState: { errors },
-  } = useForm<CreateMovie>();
+  } = useForm<MovieForm>();
 
   const loadMovies = async () => {
     try {
@@ -65,23 +76,23 @@ export default function AdminPage() {
       title: "",
       description: "",
       category: "Action",
-      thumbnail: "",
+      thumbnail: null,
       youtubeUrl: "",
       year: new Date().getFullYear(),
       matchRate: 98,
       ageRating: "13+",
-      duration: "2h 0m",
+      duration: 120,
     });
     setIsFormOpen(true);
   };
 
   const handleOpenEdit = (movie: Movie) => {
     setEditingMovie(movie);
+    setEditingMovieId(movie.id);
     setSelectedFileName(null);
     setValue("title", movie.title);
     setValue("description", movie.description);
     setValue("category", movie.category);
-    setValue("thumbnail", movie.thumbnail);
     setValue("youtubeUrl", movie.youtubeUrl);
     setValue("year", movie.year);
     setValue("matchRate", movie.matchRate);
@@ -90,16 +101,17 @@ export default function AdminPage() {
     setIsFormOpen(true);
   };
 
-  const onSubmit = async (data: CreateMovie) => {
+  const onSubmit = async (data: MovieForm) => {
     try {
       const validated = parseSchema(createMovieSchema, {
         ...data,
+        thumbnail: data.thumbnail || editingMovie?.thumbnail,
         year: Number(data.year),
         matchRate: Number(data.matchRate),
       });
 
       if (editingMovie) {
-        const updatedMovie: Movie = {
+        const updatedMovie: UpdateMovie = {
           ...editingMovie,
           title: validated.title,
           description: validated.description,
@@ -111,7 +123,7 @@ export default function AdminPage() {
           ageRating: validated.ageRating,
           duration: validated.duration,
         };
-        await movieService.updateMovie(updatedMovie);
+        await movieService.updateMovie(editingMovieId!, updatedMovie);
       } else {
         const newMoviePayload: CreateMovie = {
           title: validated.title,
