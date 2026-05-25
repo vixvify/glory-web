@@ -21,6 +21,7 @@ import { parseSchema } from "@/lib/validation";
 import { createMovieSchema } from "@/core/schema/movie";
 import { movieService, authService } from "@/infra/container";
 import { useAppStore } from "@/store/useStore";
+import Loading from "../loading";
 
 type MovieForm = {
   title: string;
@@ -34,18 +35,24 @@ type MovieForm = {
   duration: number;
 };
 
+type Sortby = "title" | "year" | "views"
+
 export default function AdminPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
-  const [sortBy, setSortBy] = useState<"title" | "year" | "views">("title");
+  const [sortBy, setSortBy] = useState<Sortby>("title");
   const { currentUser, setCurrentUser, fetchCurrentUser } = useAppStore();
+
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [availableAgeRatings, setAvailableAgeRatings] = useState<string[]>([]);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState<UpdateMovie | null>(null);
   const [editingMovieId, setEditingMovieId] = useState<string | null>(null);
   const [deleteMovieId, setDeleteMovieId] = useState<string | null>(null);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const {
     register,
@@ -57,16 +64,33 @@ export default function AdminPage() {
 
   const loadMovies = async () => {
     try {
+      setIsLoading(true);
       const list = await movieService.getAllMovies();
       setMovies(list);
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadMetadata = async () => {
+    try {
+      const [cats, ratings] = await Promise.all([
+        movieService.getCategories(),
+        movieService.getAgeRatings()
+      ]);
+      setAvailableCategories(cats);
+      setAvailableAgeRatings(ratings);
+    } catch (err) {
+      console.error("Failed to load categories or ratings metadata:", err);
     }
   };
 
   useEffect(() => {
     fetchCurrentUser();
     loadMovies();
+    loadMetadata();
   }, []);
 
   const handleOpenAdd = () => {
@@ -80,7 +104,7 @@ export default function AdminPage() {
       youtubeUrl: "",
       year: new Date().getFullYear(),
       matchRate: 98,
-      ageRating: "13+",
+      ageRating: "PG",
       duration: 120,
     });
     setIsFormOpen(true);
@@ -90,14 +114,17 @@ export default function AdminPage() {
     setEditingMovie(movie);
     setEditingMovieId(movie.id);
     setSelectedFileName(null);
-    setValue("title", movie.title);
-    setValue("description", movie.description);
-    setValue("category", movie.category);
-    setValue("youtubeUrl", movie.youtubeUrl);
-    setValue("year", movie.year);
-    setValue("matchRate", movie.matchRate);
-    setValue("ageRating", movie.ageRating);
-    setValue("duration", movie.duration);
+    reset({
+      title: movie.title,
+      description: movie.description,
+      category: movie.category,
+      thumbnail: null,
+      youtubeUrl: movie.youtubeUrl,
+      year: movie.year,
+      matchRate: movie.matchRate,
+      ageRating: movie.ageRating,
+      duration: movie.duration,
+    });
     setIsFormOpen(true);
   };
 
@@ -143,7 +170,7 @@ export default function AdminPage() {
       setEditingMovie(null);
       reset();
     } catch (err: any) {
-      alert(err.message || "Invalid input data");
+      console.error(err)
     }
   };
 
@@ -193,6 +220,10 @@ export default function AdminPage() {
   };
 
   const filteredMovies = getFilteredAndSortedMovies();
+
+  if (isLoading) {
+    return <Loading />
+  }
 
   return (
     <div className="min-h-screen bg-background text-white flex flex-col font-sans select-none pb-20">
@@ -302,9 +333,9 @@ export default function AdminPage() {
                   onChange={(e) => setCategoryFilter(e.target.value)}
                   className="text-xs bg-zinc-900 border border-zinc-800 text-white rounded-lg px-3 py-1.5 focus:border-brand focus:outline-none cursor-pointer"
                 >
-                  <option value="">All Categories</option>
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>
+                  <option value="" className="bg-zinc-900 text-white">All Categories</option>
+                  {availableCategories.map((cat) => (
+                    <option key={cat} value={cat} className="bg-zinc-900 text-white">
                       {cat}
                     </option>
                   ))}
@@ -315,12 +346,12 @@ export default function AdminPage() {
                 <span className="text-xs text-zinc-400 font-semibold whitespace-nowrap">Sort:</span>
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
+                  onChange={(e) => setSortBy(e.target.value as Sortby)}
                   className="text-xs bg-zinc-900 border border-zinc-800 text-white rounded-lg px-3 py-1.5 focus:border-brand focus:outline-none cursor-pointer"
                 >
-                  <option value="title">Alphabetical</option>
-                  <option value="year">Release Year</option>
-                  <option value="views">Popularity</option>
+                  <option value="title" className="bg-zinc-900 text-white">Alphabetical</option>
+                  <option value="year" className="bg-zinc-900 text-white">Release Year</option>
+                  <option value="views" className="bg-zinc-900 text-white">Popularity</option>
                 </select>
               </div>
             </div>
@@ -473,11 +504,11 @@ export default function AdminPage() {
                       {...register("category", { required: "Category is required" })}
                       className="w-full bg-black/40 border border-zinc-800 focus:border-brand rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition-colors cursor-pointer"
                     >
-                      <option value="Action">Action</option>
-                      <option value="Sci-Fi">Sci-Fi</option>
-                      <option value="Horror">Horror</option>
-                      <option value="Comedy">Comedy</option>
-                      <option value="Thriller">Thriller</option>
+                      {availableCategories.map((cat) => (
+                        <option key={cat} value={cat} className="bg-zinc-900 text-white">
+                          {cat}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -487,10 +518,11 @@ export default function AdminPage() {
                       {...register("ageRating", { required: "Age rating is required" })}
                       className="w-full bg-black/40 border border-zinc-800 focus:border-brand rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition-colors cursor-pointer"
                     >
-                      <option value="PG">PG</option>
-                      <option value="13+">13+</option>
-                      <option value="16+">16+</option>
-                      <option value="18+">18+</option>
+                      {availableAgeRatings.map((rating) => (
+                        <option key={rating} value={rating} className="bg-zinc-900 text-white">
+                          {rating}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>

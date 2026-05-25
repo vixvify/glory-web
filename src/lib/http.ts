@@ -30,8 +30,8 @@ const handleRequest = async <T>(
   try {
     const response = await requestFn();
     return {
-      data: response.data,
-      status: response.status,
+      data: response.data.data,
+      status: response.data.status,
       statusCode: response.data?.statusCode || "SUCCESS",
     };
   } catch (error) {

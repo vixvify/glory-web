@@ -5,18 +5,21 @@ export const ratingSchema = z.object({
   score: z.number().min(1).max(5),
 });
 
+export const categorySchema = z.enum(["Action", "Sci-Fi", "Horror", "Comedy", "Thriller", "Drama", "Romance", "Adventure", "Fantasy", "Animation", "Biography", "Documentary", "Family", "Music", "Mystery", "Sport", "Western"]);
+export const ageRatingSchema = z.enum(["G", "PG", "PG-13", "NC-17", "R"]);
+
 export const movieSchema = z.object({
   id: z.string(),
   title: z.string().min(1, "Title is required"),
   description: z.string().min(1, "Description is required"),
-  category: z.string().min(1, "Category is required"),
+  category: categorySchema,
   thumbnail: z.any(),
   youtubeUrl: z.string().url("Must be a valid URL"),
   views: z.number().nonnegative(),
-  ratings: z.array(ratingSchema),
+  ratings: z.string(),
   year: z.number().int().min(1900).max(2100),
   matchRate: z.number().min(0).max(100),
-  ageRating: z.string().min(1, "Age rating is required"),
+  ageRating: ageRatingSchema,
   duration: z.number().min(1, "Duration is required"),
 });
 

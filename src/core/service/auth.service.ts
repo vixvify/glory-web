@@ -4,30 +4,50 @@ import { AuthRepository } from "../ports/auth.repository";
 export class AuthService {
     constructor(private readonly authRepository: AuthRepository) { }
     async register(user: RegisterUser): Promise<User> {
-        const response = await this.authRepository.register(user);
-        if (response.error) {
-            throw response.error;
+        try {
+            const response = await this.authRepository.register(user);
+            if (response.error) {
+                throw new Error(response.error);
+            }
+            return response.data;
+        } catch (error) {
+            console.error("Error in register:", error);
+            throw error;
         }
-        return response.data;
     }
     async login(user: LoginUser): Promise<User> {
-        const response = await this.authRepository.login(user);
-        if (response.error) {
-            throw response.error;
+        try {
+            const response = await this.authRepository.login(user);
+            if (response.error) {
+                throw new Error(response.error);
+            }
+            return response.data;
+        } catch (error) {
+            console.error("Error in login:", error);
+            throw error;
         }
-        return response.data;
     }
     async logout(): Promise<void> {
-        const response = await this.authRepository.logout();
-        if (response.error) {
-            throw response.error;
+        try {
+            const response = await this.authRepository.logout();
+            if (response.error) {
+                throw new Error(response.error);
+            }
+        } catch (error) {
+            console.error("Error in logout:", error);
+            throw error;
         }
     }
     async getCurrentUser(): Promise<User> {
-        const response = await this.authRepository.getCurrentUser();
-        if (response.error) {
-            throw response.error;
+        try {
+            const response = await this.authRepository.getCurrentUser();
+            if (response.error) {
+                throw new Error(response.error);
+            }
+            return response.data;
+        } catch (error) {
+            console.error("Error in getCurrentUser:", error);
+            throw error;
         }
-        return response.data;
     }
 }
