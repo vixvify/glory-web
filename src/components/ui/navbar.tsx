@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import SearchIcon from "@mui/icons-material/Search";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import CloseIcon from "@mui/icons-material/Close";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { User } from "@/core/domain/user";
 
 interface NavbarProps {

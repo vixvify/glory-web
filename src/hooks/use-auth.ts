@@ -1,0 +1,46 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { authService } from "@/infra/container";
+import { RegisterUser, LoginUser, User } from "@/core/domain/user";
+import { useAppStore } from "@/store/use-store";
+
+export function useRegisterMutation() {
+  const { setCurrentUser, showToast } = useAppStore();
+  const queryClient = useQueryClient();
+
+  return useMutation<User, Error, RegisterUser>({
+    mutationFn: (data) => authService.register(data),
+    onSuccess: (user) => {
+      setCurrentUser(user);
+      showToast("ลงทะเบียนสำเร็จ! ยินดีต้อนรับสู่ ThaiFlix.", "success");
+      queryClient.invalidateQueries({ queryKey: ["favorites"] });
+    },
+  });
+}
+
+export function useLoginMutation() {
+  const { setCurrentUser, showToast } = useAppStore();
+  const queryClient = useQueryClient();
+
+  return useMutation<User, Error, LoginUser>({
+    mutationFn: (data) => authService.login(data),
+    onSuccess: (user) => {
+      setCurrentUser(user);
+      showToast("เข้าสู่ระบบสำเร็จ! ยินดีต้อนรับกลับ.", "success");
+      queryClient.invalidateQueries({ queryKey: ["favorites"] });
+    },
+  });
+}
+
+export function useLogoutMutation() {
+  const { setCurrentUser, showToast } = useAppStore();
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, void>({
+    mutationFn: () => authService.logout(),
+    onSuccess: () => {
+      setCurrentUser(null);
+      showToast("ออกจากระบบสำเร็จ", "info");
+      queryClient.invalidateQueries({ queryKey: ["favorites"] });
+    },
+  });
+}

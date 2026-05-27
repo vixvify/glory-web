@@ -6,7 +6,7 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { Movie } from "@/core/domain/movie";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { categoryTitleMapping } from "@/core/constants/categories";
 
 interface Props {

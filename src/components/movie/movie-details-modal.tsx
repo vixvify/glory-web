@@ -11,7 +11,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import { Movie } from "@/core/domain/movie";
 import { User } from "@/core/domain/user";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 
 interface MovieDetailsModalProps {
   isOpen: boolean;

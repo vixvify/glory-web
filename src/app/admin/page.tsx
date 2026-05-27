@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
-import Navbar from "@/components/ui/Navbar";
+import Navbar from "@/components/ui/navbar";
 import { Movie, CreateMovie, UpdateMovie } from "@/core/domain/movie";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -19,11 +19,19 @@ import StarIcon from "@mui/icons-material/Star";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { parseSchema } from "@/lib/validation";
 import { createMovieSchema } from "@/core/schema/movie";
-import { movieService, authService } from "@/infra/container";
-import { useAppStore } from "@/store/useStore";
+import { useAppStore } from "@/store/use-store";
 import Loading from "../loading";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  useMoviesQuery,
+  useCategoriesQuery,
+  useAgeRatingsQuery,
+  useCreateMovieMutation,
+  useUpdateMovieMutation,
+  useDeleteMovieMutation,
+} from "@/hooks/use-movies";
+import { useLogoutMutation } from "@/hooks/use-auth";
 
 type MovieForm = {
   title: string;
@@ -37,24 +45,28 @@ type MovieForm = {
   duration: number;
 };
 
-type Sortby = "title" | "year" | "views"
+type Sortby = "title" | "year" | "views";
 
 export default function AdminPage() {
-  const [movies, setMovies] = useState<Movie[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [sortBy, setSortBy] = useState<Sortby>("title");
-  const { currentUser, setCurrentUser } = useAppStore();
-
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
-  const [availableAgeRatings, setAvailableAgeRatings] = useState<string[]>([]);
+  const { currentUser, setCurrentUser, showToast } = useAppStore();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState<UpdateMovie | null>(null);
   const [editingMovieId, setEditingMovieId] = useState<string | null>(null);
   const [deleteMovieId, setDeleteMovieId] = useState<string | null>(null);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+
+  const { data: movies = [], isLoading: isMoviesLoading } = useMoviesQuery();
+  const { data: availableCategories = [] } = useCategoriesQuery();
+  const { data: availableAgeRatings = [] } = useAgeRatingsQuery();
+
+  const createMovieMutation = useCreateMovieMutation();
+  const updateMovieMutation = useUpdateMovieMutation();
+  const deleteMovieMutation = useDeleteMovieMutation();
+  const logoutMutation = useLogoutMutation();
 
   const {
     register,
@@ -63,36 +75,6 @@ export default function AdminPage() {
     reset,
     formState: { errors },
   } = useForm<MovieForm>();
-
-  const loadMovies = async () => {
-    try {
-      setIsLoading(true);
-      const list = await movieService.getAllMovies();
-      setMovies(list);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadMetadata = async () => {
-    try {
-      const [cats, ratings] = await Promise.all([
-        movieService.getCategories(),
-        movieService.getAgeRatings()
-      ]);
-      setAvailableCategories(cats);
-      setAvailableAgeRatings(ratings);
-    } catch (err) {
-      console.error("Failed to load categories or ratings metadata:", err);
-    }
-  };
-
-  useEffect(() => {
-    loadMovies();
-    loadMetadata();
-  }, []);
 
   const handleOpenAdd = () => {
     setEditingMovie(null);
@@ -144,44 +126,51 @@ export default function AdminPage() {
           title: validated.title,
           description: validated.description,
           category: validated.category,
-          thumbnail: validated.thumbnail,
+          thumbnail: (validated.thumbnail instanceof File || typeof validated.thumbnail === "string") ? validated.thumbnail : editingMovie.thumbnail,
           youtubeUrl: validated.youtubeUrl,
           year: validated.year,
           matchRate: validated.matchRate,
           ageRating: validated.ageRating,
           duration: validated.duration,
         };
-        await movieService.updateMovie(editingMovieId!, updatedMovie);
+        await updateMovieMutation.mutateAsync({
+          id: editingMovieId!,
+          movie: updatedMovie,
+        });
+        showToast("แก้ไขภาพยนตร์เรียบร้อยแล้ว", "success");
       } else {
         const newMoviePayload: CreateMovie = {
           title: validated.title,
           description: validated.description,
           category: validated.category,
-          thumbnail: validated.thumbnail,
+          thumbnail: validated.thumbnail instanceof File ? validated.thumbnail : null,
           youtubeUrl: validated.youtubeUrl,
           year: validated.year,
           matchRate: validated.matchRate,
           ageRating: validated.ageRating,
           duration: validated.duration,
         };
-        await movieService.createMovie(newMoviePayload);
+        await createMovieMutation.mutateAsync(newMoviePayload);
+        showToast("เพิ่มภาพยนตร์เรียบร้อยแล้ว", "success");
       }
-      await loadMovies();
       setIsFormOpen(false);
       setEditingMovie(null);
       reset();
-    } catch (err: any) {
-      console.error(err)
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการบันทึกภาพยนตร์";
+      showToast(errorMessage, "error");
+      console.error(err);
     }
   };
 
   const handleDeleteConfirm = async () => {
     if (deleteMovieId) {
       try {
-        await movieService.deleteMovie(deleteMovieId);
-        await loadMovies();
-      } catch (err: any) {
-        alert(err.message || "Failed to delete movie");
+        await deleteMovieMutation.mutateAsync(deleteMovieId);
+        showToast("ลบภาพยนตร์เรียบร้อยแล้ว", "success");
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to delete movie";
+        alert(errorMessage);
       }
       setDeleteMovieId(null);
     }
@@ -222,8 +211,8 @@ export default function AdminPage() {
 
   const filteredMovies = getFilteredAndSortedMovies();
 
-  if (isLoading) {
-    return <Loading />
+  if (isMoviesLoading) {
+    return <Loading />;
   }
 
   return (
@@ -236,13 +225,8 @@ export default function AdminPage() {
         showMyListOnly={false}
         onMyListOnlyChange={() => { }}
         currentUser={currentUser}
-        onSignOut={async () => {
-          try {
-            await authService.logout();
-          } catch (err) {
-            console.error(err);
-          }
-          setCurrentUser(null);
+        onSignOut={() => {
+          logoutMutation.mutate();
         }}
         onSignInClick={() => { }}
         categories={availableCategories}
@@ -570,12 +554,12 @@ export default function AdminPage() {
                           } else {
                             setSelectedFileName(null);
                           }
-                        }
+                        },
                       })}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     />
                     <div className={`w-full bg-black/40 border ${errors.thumbnail ? "border-red-500" : "border-zinc-800 group-hover/file:border-brand"
-                      } rounded-xl px-4 py-3 text-sm text-zinc-400 flex items-center justify-between transition-colors`}>
+                      } rounded-xl px-4 py-3 text-sm text-zinc-405 flex items-center justify-between transition-colors`}>
                       <span className={selectedFileName ? "text-white font-medium truncate max-w-[70%]" : "text-zinc-400"}>
                         {selectedFileName || "Upload cover image file..."}
                       </span>

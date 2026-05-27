@@ -11,11 +11,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { registerUserSchema, loginUserSchema } from "@/core/schema/auth";
-import { authService } from "@/infra/container";
 import { User } from "@/core/domain/user";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
-import { useAppStore } from "@/store/useStore";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useRegisterMutation, useLoginMutation } from "@/hooks/use-auth";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -23,13 +22,23 @@ interface AuthModalProps {
   onLoginSuccess: (user: User) => void;
 }
 
-type AuthFormValues = z.infer<typeof registerUserSchema>;
+type AuthFormValues = {
+  name?: string;
+  email: string;
+  password: string;
+};
 
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const { showToast, setCurrentUser } = useAppStore();
+
+  const registerMutation = useRegisterMutation();
+  const loginMutation = useLoginMutation();
+
+  const activeSchema = isSignUp
+    ? registerUserSchema
+    : registerUserSchema.extend({ name: z.string().optional() });
 
   const {
     register,
@@ -37,7 +46,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModal
     formState: { errors, isSubmitting },
     reset,
   } = useForm<AuthFormValues>({
-    resolver: zodResolver(isSignUp ? registerUserSchema : loginUserSchema) as any,
+    resolver: zodResolver(activeSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -52,27 +61,24 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModal
 
     try {
       if (isSignUp) {
-        const user = await authService.register({
+        const user = await registerMutation.mutateAsync({
           name: data.name!,
           email: data.email,
           password: data.password,
         });
-        showToast("ลงทะเบียนสำเร็จ! ยินดีต้อนรับสู่ ThaiFlix.", "success");
         onLoginSuccess(user);
       } else {
-        const user = await authService.login({
+        const user = await loginMutation.mutateAsync({
           email: data.email,
           password: data.password,
         });
-        showToast("เข้าสู่ระบบสำเร็จ! ยินดีต้อนรับกลับ.", "success");
         onLoginSuccess(user);
-        setCurrentUser(user);
       }
       onClose();
       resetForm();
-    } catch (err: any) {
-      setError(err.message || "Authentication failed");
-      showToast(err.message || "Authentication failed", "error");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Authentication failed";
+      setError(errorMessage);
     }
   };
 
@@ -157,7 +163,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModal
 
           <Button
             type="submit"
-            isLoading={isSubmitting}
+            isLoading={isSubmitting || registerMutation.isPending || loginMutation.isPending}
             className="w-full mt-2"
           >
             {isSignUp ? "สมัครสมาชิก" : "เข้าสู่ระบบ"}

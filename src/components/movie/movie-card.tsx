@@ -6,7 +6,7 @@ import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
 import StarIcon from "@mui/icons-material/Star";
 import { Movie } from "../../core/domain/movie";
-import { useAppStore } from "@/store/useStore";
+import { useAppStore } from "@/store/use-store";
 import { categoryTitleMapping } from "@/core/constants/categories";
 
 interface Props {

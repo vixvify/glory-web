@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosError, AxiosResponse } from "axios";
 import { ApiResponse } from "@/infra/interface/response";
 
 const http: AxiosInstance = axios.create({
@@ -25,8 +25,16 @@ http.interceptors.request.use(
   }
 );
 
+interface StandardResponse<T> {
+  data: T;
+  status: number;
+  statusCode?: string;
+  error?: string;
+  message?: string;
+}
+
 const handleRequest = async <T>(
-  requestFn: () => Promise<any>
+  requestFn: () => Promise<AxiosResponse<StandardResponse<T>>>
 ): Promise<ApiResponse<T>> => {
   try {
     const response = await requestFn();
@@ -36,7 +44,7 @@ const handleRequest = async <T>(
       statusCode: response.data?.statusCode || "SUCCESS",
     };
   } catch (error) {
-    const axiosError = error as AxiosError<any>;
+    const axiosError = error as AxiosError<StandardResponse<T>>;
     const status = axiosError.response?.status || 500;
     const errorData = axiosError.response?.data;
 
@@ -53,10 +61,10 @@ export const httpClient = {
   get: <T>(url: string, config?: AxiosRequestConfig) =>
     handleRequest<T>(() => http.get(url, config)),
 
-  post: <T>(url: string, data?: any, config?: AxiosRequestConfig) =>
+  post: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
     handleRequest<T>(() => http.post(url, data, config)),
 
-  put: <T>(url: string, data?: any, config?: AxiosRequestConfig) =>
+  put: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
     handleRequest<T>(() => http.put(url, data, config)),
 
   delete: <T>(url: string, config?: AxiosRequestConfig) =>
