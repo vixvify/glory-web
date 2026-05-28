@@ -69,6 +69,14 @@ export class MovieService {
       formData.append("matchRate", String(validated.matchRate));
       formData.append("ageRating", validated.ageRating);
       formData.append("duration", String(validated.duration));
+      
+      if (validated.university) formData.append("university", validated.university);
+      if (validated.director) formData.append("director", validated.director);
+      if (validated.producer) formData.append("producer", validated.producer);
+      if (validated.writer) formData.append("writer", validated.writer);
+      if (validated.cast) formData.append("cast", validated.cast);
+      if (validated.btsVideo) formData.append("btsVideo", validated.btsVideo);
+      if (validated.btsPhotos) formData.append("btsPhotos", validated.btsPhotos);
 
       if (validated.thumbnail instanceof File) {
         formData.append("thumbnail", validated.thumbnail);
@@ -105,6 +113,14 @@ export class MovieService {
       formData.append("matchRate", String(validated.matchRate));
       formData.append("ageRating", validated.ageRating);
       formData.append("duration", String(validated.duration));
+
+      if (validated.university) formData.append("university", validated.university);
+      if (validated.director) formData.append("director", validated.director);
+      if (validated.producer) formData.append("producer", validated.producer);
+      if (validated.writer) formData.append("writer", validated.writer);
+      if (validated.cast) formData.append("cast", validated.cast);
+      if (validated.btsVideo) formData.append("btsVideo", validated.btsVideo);
+      if (validated.btsPhotos) formData.append("btsPhotos", validated.btsPhotos);
 
       if (validated.thumbnail instanceof File) {
         formData.append("thumbnail", validated.thumbnail);

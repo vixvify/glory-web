@@ -150,15 +150,90 @@ export default function MovieDetailsModal({
               <span className="px-1.5 py-0.5 text-xs font-semibold border border-zinc-500 text-zinc-300 rounded">
                 {movie.ageRating}
               </span>
-              <span className="text-zinc-400">{movie.duration}</span>
+              <span className="text-zinc-400">{movie.duration} นาที</span>
               <span className="px-2 py-0.5 text-xs font-semibold bg-zinc-850 text-zinc-300 rounded-full">
                 {movie.category}
               </span>
+              {movie.university && (
+                <span className="px-2.5 py-0.5 text-xs font-bold bg-brand/10 text-brand border border-brand/20 rounded-full">
+                  {movie.university}
+                </span>
+              )}
             </div>
 
             <p className="text-zinc-200 text-base md:text-lg leading-relaxed font-light">
               {movie.description}
             </p>
+
+            {movie.crew && (
+              <div className="space-y-4 pt-6 border-t border-zinc-800/60">
+                <h4 className="text-base font-bold text-white tracking-wide uppercase">
+                  ทีมงานและนักแสดง (Cast & Crew)
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/80">
+                  {movie.crew.director && (
+                    <div className="space-y-0.5">
+                      <span className="text-zinc-500 text-[10px] uppercase tracking-wider block font-semibold">ผู้กำกับ / Director</span>
+                      <span className="text-zinc-200 font-semibold">{movie.crew.director}</span>
+                    </div>
+                  )}
+                  {movie.crew.producer && (
+                    <div className="space-y-0.5">
+                      <span className="text-zinc-500 text-[10px] uppercase tracking-wider block font-semibold">ผู้อำนวยการสร้าง / Producer</span>
+                      <span className="text-zinc-200 font-semibold">{movie.crew.producer}</span>
+                    </div>
+                  )}
+                  {movie.crew.writer && (
+                    <div className="space-y-0.5">
+                      <span className="text-zinc-500 text-[10px] uppercase tracking-wider block font-semibold">ผู้เขียนบท / Writer</span>
+                      <span className="text-zinc-200 font-semibold">{movie.crew.writer}</span>
+                    </div>
+                  )}
+                  {movie.crew.cast && movie.crew.cast.length > 0 && (
+                    <div className="space-y-0.5 sm:col-span-2">
+                      <span className="text-zinc-500 text-[10px] uppercase tracking-wider block font-semibold">นักแสดง / Cast</span>
+                      <span className="text-zinc-200 font-semibold">
+                        {movie.crew.cast.join(", ")}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {movie.crew && (movie.crew.btsVideo || (movie.crew.btsPhotos && movie.crew.btsPhotos.length > 0)) && (
+              <div className="space-y-4 pt-6 border-t border-zinc-800/60">
+                <h4 className="text-base font-bold text-white tracking-wide uppercase">
+                  เบื้องหลังการถ่ายทำ (Behind the Scenes)
+                </h4>
+                <div className="space-y-4">
+                  {movie.crew.btsVideo && (
+                    <div className="relative aspect-video rounded-xl overflow-hidden border border-zinc-800/80 bg-zinc-950">
+                      <iframe
+                        src={movie.crew.btsVideo.replace("watch?v=", "embed/")}
+                        title="Behind The Scenes Video"
+                        className="w-full h-full absolute inset-0 border-0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  )}
+                  {movie.crew.btsPhotos && movie.crew.btsPhotos.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {movie.crew.btsPhotos.map((photo, index) => (
+                        <div key={index} className="relative aspect-video rounded-xl overflow-hidden border border-zinc-800/80 group/bts shadow-lg bg-zinc-950">
+                          <img
+                            src={photo}
+                            alt={`Behind the Scenes Photo ${index + 1}`}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover/bts:scale-108"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="h-[1px] bg-zinc-800 w-full" />
 

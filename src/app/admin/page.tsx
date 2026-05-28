@@ -43,6 +43,13 @@ type MovieForm = {
   matchRate: number;
   ageRating: string;
   duration: number;
+  university?: string;
+  director?: string;
+  producer?: string;
+  writer?: string;
+  cast?: string;
+  btsVideo?: string;
+  btsPhotos?: string;
 };
 
 type Sortby = "title" | "year" | "views";
@@ -89,6 +96,13 @@ export default function AdminPage() {
       matchRate: 98,
       ageRating: "PG",
       duration: 120,
+      university: "",
+      director: "",
+      producer: "",
+      writer: "",
+      cast: "",
+      btsVideo: "",
+      btsPhotos: "",
     });
     setIsFormOpen(true);
   };
@@ -107,6 +121,13 @@ export default function AdminPage() {
       matchRate: movie.matchRate,
       ageRating: movie.ageRating,
       duration: movie.duration,
+      university: movie.university || "",
+      director: movie.crew?.director || "",
+      producer: movie.crew?.producer || "",
+      writer: movie.crew?.writer || "",
+      cast: movie.crew?.cast ? movie.crew.cast.join(", ") : "",
+      btsVideo: movie.crew?.btsVideo || "",
+      btsPhotos: movie.crew?.btsPhotos ? movie.crew.btsPhotos.join(", ") : "",
     });
     setIsFormOpen(true);
   };
@@ -118,6 +139,7 @@ export default function AdminPage() {
         thumbnail: data.thumbnail || editingMovie?.thumbnail,
         year: Number(data.year),
         matchRate: Number(data.matchRate),
+        duration: Number(data.duration),
       });
 
       if (editingMovie) {
@@ -132,6 +154,13 @@ export default function AdminPage() {
           matchRate: validated.matchRate,
           ageRating: validated.ageRating,
           duration: validated.duration,
+          university: validated.university || null,
+          director: validated.director || null,
+          producer: validated.producer || null,
+          writer: validated.writer || null,
+          cast: validated.cast || null,
+          btsVideo: validated.btsVideo || null,
+          btsPhotos: validated.btsPhotos || null,
         };
         await updateMovieMutation.mutateAsync({
           id: editingMovieId!,
@@ -149,6 +178,13 @@ export default function AdminPage() {
           matchRate: validated.matchRate,
           ageRating: validated.ageRating,
           duration: validated.duration,
+          university: validated.university || undefined,
+          director: validated.director || undefined,
+          producer: validated.producer || undefined,
+          writer: validated.writer || undefined,
+          cast: validated.cast || undefined,
+          btsVideo: validated.btsVideo || undefined,
+          btsPhotos: validated.btsPhotos || undefined,
         };
         await createMovieMutation.mutateAsync(newMoviePayload);
         showToast("เพิ่มภาพยนตร์เรียบร้อยแล้ว", "success");
@@ -584,6 +620,63 @@ export default function AdminPage() {
                   error={errors.youtubeUrl?.message}
                   {...register("youtubeUrl", { required: "YouTube URL is required" })}
                 />
+
+                <div className="border-t border-zinc-800/60 pt-4 mt-2 space-y-4">
+                  <h4 className="text-xs font-bold text-brand uppercase tracking-wider">
+                    Production & Crew Details (ข้อมูลผู้สร้างและเบื้องหลัง)
+                  </h4>
+
+                  <Input
+                    label="University / Institution (สถาบัน/มหาวิทยาลัย)"
+                    placeholder="e.g. Chulalongkorn University"
+                    error={errors.university?.message}
+                    {...register("university")}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      label="Director (ผู้กำกับ)"
+                      placeholder="e.g. Christopher Nolan"
+                      error={errors.director?.message}
+                      {...register("director")}
+                    />
+                    <Input
+                      label="Producer (ผู้อำนวยการสร้าง)"
+                      placeholder="e.g. Emma Thomas"
+                      error={errors.producer?.message}
+                      {...register("producer")}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      label="Writer (ผู้เขียนบท)"
+                      placeholder="e.g. Jonathan Nolan"
+                      error={errors.writer?.message}
+                      {...register("writer")}
+                    />
+                    <Input
+                      label="Cast (นักแสดง - แยกด้วยจุลภาค ,)"
+                      placeholder="e.g. Matthew McConaughey, Anne Hathaway"
+                      error={errors.cast?.message}
+                      {...register("cast")}
+                    />
+                  </div>
+
+                  <Input
+                    label="BTS Video URL (ลิงก์วิดีโอเบื้องหลัง YouTube)"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    error={errors.btsVideo?.message}
+                    {...register("btsVideo")}
+                  />
+
+                  <Input
+                    label="BTS Photos (ลิงก์รูปภาพเบื้องหลัง - แยกด้วยจุลภาค ,)"
+                    placeholder="e.g. https://domain.com/photo1.jpg, https://domain.com/photo2.jpg"
+                    error={errors.btsPhotos?.message}
+                    {...register("btsPhotos")}
+                  />
+                </div>
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-zinc-300">Description</label>

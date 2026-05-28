@@ -21,6 +21,13 @@ export const movieSchema = z.object({
   matchRate: z.number().min(0).max(100),
   ageRating: ageRatingSchema,
   duration: z.number().min(1, "Duration is required"),
+  university: z.string().optional().nullable(),
+  director: z.string().optional().nullable(),
+  producer: z.string().optional().nullable(),
+  writer: z.string().optional().nullable(),
+  cast: z.string().optional().nullable(),
+  btsVideo: z.string().optional().nullable(),
+  btsPhotos: z.string().optional().nullable(),
 });
 
 export const updateMovieSchema = movieSchema.omit({
