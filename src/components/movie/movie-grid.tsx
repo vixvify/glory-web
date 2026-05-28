@@ -7,7 +7,7 @@ interface Props {
   movies: Movie[];
   onMovieClick: (movie: Movie) => void;
   onPlayClick: (movie: Movie) => void;
-  favorites: string[];
+  favorites: Movie[];
   onToggleFavorite: (movieId: string) => void;
 }
 
@@ -26,7 +26,7 @@ export default function MovieGrid({
           movie={movie}
           onClick={() => onMovieClick(movie)}
           onPlayClick={() => onPlayClick(movie)}
-          isFavorite={favorites.includes(movie.id)}
+          isFavorite={favorites.some((fav) => fav.id === movie.id)}
           onToggleFavorite={() => onToggleFavorite(movie.id)}
         />
       ))}

@@ -238,7 +238,6 @@ export default function AdminPage() {
   };
 
   const totalViews = movies.reduce((sum, m) => sum + (m.views || 0), 0);
-  const categories = Array.from(new Set(movies.map((m) => m.category)));
 
   const getFilteredAndSortedMovies = () => {
     let list = [...movies];
@@ -334,7 +333,7 @@ export default function AdminPage() {
             </div>
             <div className="space-y-0.5">
               <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold">Categories</p>
-              <h3 className="text-2xl font-black">{categories.length}</h3>
+              <h3 className="text-2xl font-black">{availableCategories.length}</h3>
             </div>
           </div>
 
@@ -699,7 +698,7 @@ export default function AdminPage() {
                     <label className="text-xs font-semibold text-zinc-300">
                       BTS Photos (รูปภาพเบื้องหลัง)
                     </label>
-                    
+
                     {/* Previews grid */}
                     {(existingBtsPhotos.length > 0 || newBtsPhotosFiles.length > 0) && (
                       <div className="grid grid-cols-4 gap-2 mb-3">
@@ -719,7 +718,7 @@ export default function AdminPage() {
                             <span className="absolute bottom-1 left-1 px-1 py-0.5 bg-black/75 rounded text-[8px] text-zinc-400 font-bold uppercase tracking-wider scale-90 origin-bottom-left">Saved</span>
                           </div>
                         ))}
-                        
+
                         {/* Newly added local files */}
                         {newBtsPhotosFiles.map((file, idx) => {
                           const objectUrl = URL.createObjectURL(file);

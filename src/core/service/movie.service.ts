@@ -69,7 +69,7 @@ export class MovieService {
       formData.append("matchRate", String(validated.matchRate));
       formData.append("ageRating", validated.ageRating);
       formData.append("duration", String(validated.duration));
-      
+
       if (validated.university) formData.append("university", validated.university);
       if (validated.director) formData.append("director", validated.director);
       if (validated.producer) formData.append("producer", validated.producer);
@@ -200,7 +200,7 @@ export class MovieService {
       throw error;
     }
   }
-  async getFavorites(): Promise<string[]> {
+  async getFavorites(): Promise<Movie[]> {
     try {
       const response = await this.movieRepository.getFavorites();
       if (response.error) {
@@ -258,6 +258,18 @@ export class MovieService {
       throw error;
     }
   }
+  async getUniversities(): Promise<string[]> {
+    try {
+      const response = await this.movieRepository.getUniversities();
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Error in getUniversities:", error);
+      throw error;
+    }
+  }
   async addRating(data: RatingInput): Promise<void> {
     try {
       const response = await this.movieRepository.addRating(data);
@@ -312,6 +324,18 @@ export class MovieService {
       return response.data;
     } catch (error) {
       console.error(`Error in getRatingByMovieAndUser:`, error);
+      throw error;
+    }
+  }
+  async getMoviesByUniversity(university: string): Promise<Movie[]> {
+    try {
+      const response = await this.movieRepository.getMoviesByUniversity(university);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      return response.data;
+    } catch (error) {
+      console.error(`Error in getMovieByUniversity (university: ${university}):`, error);
       throw error;
     }
   }

@@ -6,7 +6,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { Movie } from "@/core/domain/movie";
 import MovieCard from "@/components/movie/movie-card";
 
-interface MovieRowProps {
+interface MovieRankRowProps {
   title: string;
   movies: Movie[];
   onMovieClick: (movie: Movie) => void;
@@ -15,17 +15,19 @@ interface MovieRowProps {
   onToggleFavorite: (movieId: string) => void;
 }
 
-export default function MovieRow({
+export default function MovieRankRow({
   title,
   movies,
   onMovieClick,
   onPlayClick,
   favorites,
   onToggleFavorite,
-}: MovieRowProps) {
+}: MovieRankRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
+
+  const topTenMovies = movies.slice(0, 10);
 
   const checkScrollArrows = () => {
     if (rowRef.current) {
@@ -52,10 +54,10 @@ export default function MovieRow({
     }
   };
 
-  if (movies.length === 0) return null;
+  if (topTenMovies.length === 0) return null;
 
   return (
-    <div className="space-y-2 group/row relative">
+    <div className="space-y-4 group/row relative">
       <h3 className="text-base md:text-xl font-bold text-zinc-100 tracking-wide hover:text-white cursor-pointer transition-colors duration-200 pl-1 inline-block">
         {title}
       </h3>
@@ -72,22 +74,38 @@ export default function MovieRow({
 
         <div
           ref={rowRef}
-          className="flex overflow-x-auto gap-4 py-4 px-1.5 no-scrollbar scroll-smooth snap-x snap-mandatory"
+          className="flex overflow-x-auto gap-6 py-6 px-3 no-scrollbar scroll-smooth snap-x snap-mandatory overflow-y-visible"
         >
-          {movies.map((movie) => (
-            <div
-              key={movie.id}
-              className="flex-none w-[200px] sm:w-[240px] md:w-[280px] snap-start"
-            >
-              <MovieCard
-                movie={movie}
-                onClick={() => onMovieClick(movie)}
-                onPlayClick={() => onPlayClick(movie)}
-                isFavorite={favorites.some((fav) => fav.id === movie.id)}
-                onToggleFavorite={() => onToggleFavorite(movie.id)}
-              />
-            </div>
-          ))}
+          {topTenMovies.map((movie, index) => {
+            const isDoubleDigit = index >= 9;
+            const scale = (1 - index * 0.045) * (isDoubleDigit ? 0.75 : 1);
+            return (
+              <div
+                key={movie.id}
+                className="flex-none w-[210px] sm:w-[250px] md:w-[290px] relative snap-start group/rank flex items-end h-[180px] sm:h-[220px] md:h-[260px] select-none"
+              >
+                <div
+                  className="absolute left-[-15px] sm:left-[-22px] md:left-[-28px] bottom-[-1.5rem] sm:bottom-[-2.2rem] md:bottom-[-2.8rem] z-0 select-none text-stroke-netflix font-black leading-none flex items-end transition-all duration-300 group-hover/rank:scale-[1.08] group-hover/rank:-translate-y-1.5"
+                  style={{
+                    fontSize: "clamp(7rem, 15vw, 14.5rem)",
+                    transform: `scale(${scale})`,
+                    transformOrigin: "bottom left",
+                  }}
+                >
+                  {index + 1}
+                </div>
+                <div className="w-[80%] ml-auto relative z-10 h-full">
+                  <MovieCard
+                    movie={movie}
+                    onClick={() => onMovieClick(movie)}
+                    onPlayClick={() => onPlayClick(movie)}
+                    isFavorite={favorites.some((fav) => fav.id === movie.id)}
+                    onToggleFavorite={() => onToggleFavorite(movie.id)}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {showRightArrow && (

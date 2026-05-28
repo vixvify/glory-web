@@ -23,6 +23,12 @@ export class MovieRepositoryImpl implements MovieRepository {
     );
     return response;
   }
+  async getMoviesByUniversity(university: string): Promise<ApiResponse<Movie[]>> {
+    const response = await httpClient.get<Movie[]>(
+      `/movie/university/${university}`,
+    );
+    return response;
+  }
   async createMovie(formData: FormData): Promise<ApiResponse<Movie>> {
     const response = await httpClient.post<Movie>("/movie", formData, {
       headers: {
@@ -46,8 +52,8 @@ export class MovieRepositoryImpl implements MovieRepository {
     const response = await httpClient.delete<void>(`/movie/${id}`);
     return response;
   }
-  async getFavorites(): Promise<ApiResponse<string[]>> {
-    const response = await httpClient.get<string[]>("/movie/favorites");
+  async getFavorites(): Promise<ApiResponse<Movie[]>> {
+    const response = await httpClient.get<Movie[]>("/movie/favorites");
     return response;
   }
   async addFavorite(movieId: string): Promise<ApiResponse<void>> {
@@ -64,6 +70,10 @@ export class MovieRepositoryImpl implements MovieRepository {
   }
   async getCategories(): Promise<ApiResponse<string[]>> {
     const response = await httpClient.get<string[]>("/movie/categories-data");
+    return response;
+  }
+  async getUniversities(): Promise<ApiResponse<string[]>> {
+    const response = await httpClient.get<string[]>("/movie/universities-data");
     return response;
   }
   async getAgeRatings(): Promise<ApiResponse<string[]>> {
@@ -94,6 +104,10 @@ export class MovieRepositoryImpl implements MovieRepository {
     const response = await httpClient.get<Rating[]>(`/movie/ratings`, {
       params: data,
     });
+    return response;
+  }
+  async getMovieByUniversity(university: string): Promise<ApiResponse<Movie[]>> {
+    const response = await httpClient.get<Movie[]>(`/movie/university/${university}`);
     return response;
   }
 }

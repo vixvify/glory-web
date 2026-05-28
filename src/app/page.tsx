@@ -5,6 +5,7 @@ import Navbar from "@/components/ui/navbar";
 import MovieHero from "@/components/movie/movie-hero";
 import MovieGrid from "@/components/movie/movie-grid";
 import MovieRow from "@/components/movie/movie-row";
+import MovieRankRow from "@/components/movie/movie-rank-row";
 import MovieDetailsModal from "@/components/movie/movie-details-modal";
 import TrailerModal from "@/components/modal/trailer-modal";
 import AuthModal from "@/components/modal/auth-modal";
@@ -24,6 +25,7 @@ import {
   useAddRatingMutation,
   useUpdateRatingMutation,
   useDeleteRatingMutation,
+  useUniversitiesQuery
 } from "@/hooks/use-movies";
 import { useLogoutMutation } from "@/hooks/use-auth";
 
@@ -42,9 +44,10 @@ export default function HomePage() {
 
   const { data: allMovies = [], isLoading: isMoviesLoading } = useMoviesQuery();
   const { data: categories = [] } = useCategoriesQuery();
+  const { data: universities = [] } = useUniversitiesQuery();
   const { data: serverFavorites } = useFavoritesQuery(!!currentUser);
 
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<Movie[]>([]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -81,12 +84,15 @@ export default function HomePage() {
       setIsAuthOpen(true);
       return;
     }
-    const isCurrentlyFavorite = favorites.includes(movieId);
+    const isCurrentlyFavorite = favorites.some((m) => m.id === movieId);
     const previousFavorites = [...favorites];
 
+    const targetMovie = allMovies.find((m) => m.id === movieId);
     const updatedFavorites = isCurrentlyFavorite
-      ? favorites.filter((id) => id !== movieId)
-      : [...favorites, movieId];
+      ? favorites.filter((m) => m.id !== movieId)
+      : targetMovie
+        ? [...favorites, targetMovie]
+        : favorites;
 
     setFavorites(updatedFavorites);
 
@@ -163,7 +169,7 @@ export default function HomePage() {
     let list = allMovies;
 
     if (showMyListOnly) {
-      list = list.filter((m) => favorites.includes(m.id));
+      list = favorites
     } else if (selectedCategory) {
       list = list.filter((m) => m.category === selectedCategory);
     }
@@ -187,6 +193,8 @@ export default function HomePage() {
   const recommendedMovies = () => {
     return [...allMovies].sort((a, b) => b.matchRate - a.matchRate).slice(0, 5);
   };
+
+  const popularMovies = [...allMovies].sort((a, b) => (b.views || 0) - (a.views || 0));
 
   if (isMoviesLoading) {
     return <Loading />;
@@ -216,20 +224,48 @@ export default function HomePage() {
           />
 
           <div className="relative z-20 px-6 md:px-16 space-y-12 -mt-6 md:-mt-10">
-            <MovieRow
-              title="ยอดนิยม"
-              movies={allMovies}
+            <MovieRankRow
+              title="10 อันดับหนังยอดนิยม"
+              movies={popularMovies}
               onMovieClick={setSelectedMovie}
               onPlayClick={handlePlayTrailer}
               favorites={favorites}
               onToggleFavorite={handleToggleFavorite}
             />
 
+            {favorites.length > 0 && (
+              <MovieRow
+                title="รายการโปรดของคุณ"
+                movies={favorites}
+                onMovieClick={setSelectedMovie}
+                onPlayClick={handlePlayTrailer}
+                favorites={favorites}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            )}
+
+            {universities.map((uni) => {
+              const uniMovies = allMovies.filter((m) => m.university === uni);
+              if (uniMovies.length === 0) return null;
+
+              return (
+                <MovieRow
+                  key={uni}
+                  title={`ผลงานภาพยนตร์จาก ${uni}`}
+                  movies={uniMovies}
+                  onMovieClick={setSelectedMovie}
+                  onPlayClick={handlePlayTrailer}
+                  favorites={favorites}
+                  onToggleFavorite={handleToggleFavorite}
+                />
+              );
+            })}
+
             {categories.map((category) => {
               const categoryMovies = allMovies.filter((m) => m.category === category);
               if (categoryMovies.length === 0) return null;
 
-              const displayTitle = CATEGORY_TITLE_MAPPING[category]
+              const displayTitle = CATEGORY_TITLE_MAPPING[category];
 
               return (
                 <MovieRow
@@ -243,17 +279,6 @@ export default function HomePage() {
                 />
               );
             })}
-
-            {allMovies.filter((m) => favorites.includes(m.id)).length > 0 && (
-              <MovieRow
-                title="รายการของฉัน"
-                movies={allMovies.filter((m) => favorites.includes(m.id))}
-                onMovieClick={setSelectedMovie}
-                onPlayClick={handlePlayTrailer}
-                favorites={favorites}
-                onToggleFavorite={handleToggleFavorite}
-              />
-            )}
           </div>
         </main>
       ) : (
@@ -304,7 +329,7 @@ export default function HomePage() {
           isOpen={!!selectedMovie}
           onClose={() => setSelectedMovie(null)}
           movie={activeMovieForModal}
-          isFavorite={favorites.includes(activeMovieForModal.id)}
+          isFavorite={favorites.some((fav) => fav.id === activeMovieForModal.id)}
           onToggleFavorite={handleToggleFavorite}
           onPlayTrailer={() => handlePlayTrailer(activeMovieForModal)}
           onAddRating={handleAddRating}

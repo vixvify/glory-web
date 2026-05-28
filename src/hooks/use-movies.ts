@@ -17,8 +17,15 @@ export function useCategoriesQuery() {
   });
 }
 
-export function useFavoritesQuery(enabled = true) {
+export function useUniversitiesQuery() {
   return useQuery<string[], Error>({
+    queryKey: ["universities"],
+    queryFn: () => movieService.getUniversities(),
+  });
+}
+
+export function useFavoritesQuery(enabled = true) {
+  return useQuery<Movie[], Error>({
     queryKey: ["favorites"],
     queryFn: () => movieService.getFavorites(),
     enabled,
@@ -121,5 +128,12 @@ export function useDeleteMovieMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["movies"] });
     },
+  });
+}
+
+export function useMovieByUniversityQuery(university: string) {
+  return useQuery<Movie[], Error>({
+    queryKey: ["movies-university", university],
+    queryFn: () => movieService.getMoviesByUniversity(university),
   });
 }
