@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import AddIcon from "@mui/icons-material/Add";
@@ -69,10 +69,10 @@ export default function MovieDetailsModal({
   const totalScore = movie.ratings.reduce((sum, r) => sum + r.stars, 0);
   const averageRating = movie.ratings.length > 0 ? totalScore / movie.ratings.length : 0;
 
-  const directors = movie.crew?.filter(c => c.role.toLowerCase() === "director").map(c => c.crewMember?.name).filter(Boolean) || [];
-  const producers = movie.crew?.filter(c => c.role.toLowerCase() === "producer").map(c => c.crewMember?.name).filter(Boolean) || [];
-  const writers = movie.crew?.filter(c => c.role.toLowerCase() === "writer").map(c => c.crewMember?.name).filter(Boolean) || [];
-  const cast = movie.crew?.filter(c => c.role.toLowerCase() === "cast").map(c => c.crewMember?.name).filter(Boolean) || [];
+  const directors = useMemo(() => movie.crew?.filter(c => c.role.toLowerCase() === "director").map(c => c.crewMember?.name).filter(Boolean) || [], [movie.crew]);
+  const producers = useMemo(() => movie.crew?.filter(c => c.role.toLowerCase() === "producer").map(c => c.crewMember?.name).filter(Boolean) || [], [movie.crew]);
+  const writers = useMemo(() => movie.crew?.filter(c => c.role.toLowerCase() === "writer").map(c => c.crewMember?.name).filter(Boolean) || [], [movie.crew]);
+  const cast = useMemo(() => movie.crew?.filter(c => c.role.toLowerCase() === "cast").map(c => c.crewMember?.name).filter(Boolean) || [], [movie.crew]);
 
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();

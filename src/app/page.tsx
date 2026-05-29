@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Navbar from "@/components/ui/navbar";
 import MovieHero from "@/components/movie/movie-hero";
 import MovieGrid from "@/components/movie/movie-grid";
@@ -45,16 +45,22 @@ export default function HomePage() {
   const { data: universities = [] } = useUniversitiesQuery();
   const { data: serverFavorites } = useFavoritesQuery(!!currentUser);
 
-  const [favorites, setFavorites] = useState<Movie[]>([]);
+  const [localFavorites, setLocalFavorites] = useState<Movie[] | null>(null);
 
   useEffect(() => {
     if (!currentUser) {
-      setFavorites([]);
+      setLocalFavorites(null);
       setShowMyListOnly(false);
-    } else if (serverFavorites) {
-      setFavorites(serverFavorites);
     }
-  }, [serverFavorites, currentUser]);
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (serverFavorites) {
+      setLocalFavorites(null);
+    }
+  }, [serverFavorites]);
+
+  const favorites = localFavorites ?? serverFavorites ?? [];
 
   const { data: userRatings = [] } = useMovieUserRatingQuery(
     selectedMovie?.id || "",
@@ -69,15 +75,15 @@ export default function HomePage() {
   const deleteRatingMutation = useDeleteRatingMutation();
   const logoutMutation = useLogoutMutation();
 
-  const handleLoginSuccess = (user: User) => {
+  const handleLoginSuccess = useCallback((user: User) => {
     setCurrentUser(user);
-  };
+  }, [setCurrentUser]);
 
-  const handleSignOut = () => {
+  const handleSignOut = useCallback(() => {
     logoutMutation.mutate();
-  };
+  }, [logoutMutation]);
 
-  const handleToggleFavorite = (movieId: string) => {
+  const handleToggleFavorite = useCallback((movieId: string) => {
     if (!currentUser) {
       setIsAuthOpen(true);
       return;
@@ -92,7 +98,7 @@ export default function HomePage() {
         ? [...favorites, targetMovie]
         : favorites;
 
-    setFavorites(updatedFavorites);
+    setLocalFavorites(updatedFavorites);
 
     toggleFavoriteMutation.mutate(
       { movieId, isFavorite: isCurrentlyFavorite },
@@ -105,14 +111,14 @@ export default function HomePage() {
           }
         },
         onError: () => {
-          setFavorites(previousFavorites);
+          setLocalFavorites(previousFavorites);
           showToast("เกิดข้อผิดพลาดในการปรับปรุงรายการโปรด", "error");
         },
       }
     );
-  };
+  }, [currentUser, favorites, allMovies, toggleFavoriteMutation, showToast]);
 
-  const handleAddRating = (movieId: string, user: User, stars: number) => {
+  const handleAddRating = useCallback((movieId: string, user: User, stars: number) => {
     addRatingMutation.mutate(
       { userId: user.id, movieId, stars },
       {
@@ -124,9 +130,9 @@ export default function HomePage() {
         },
       }
     );
-  };
+  }, [addRatingMutation, showToast]);
 
-  const handleUpdateRating = (movieId: string, user: User, stars: number) => {
+  const handleUpdateRating = useCallback((movieId: string, user: User, stars: number) => {
     updateRatingMutation.mutate(
       { userId: user.id, movieId, stars },
       {
@@ -138,9 +144,9 @@ export default function HomePage() {
         },
       }
     );
-  };
+  }, [updateRatingMutation, showToast]);
 
-  const handleDeleteRating = (movieId: string, user: User) => {
+  const handleDeleteRating = useCallback((movieId: string, user: User) => {
     deleteRatingMutation.mutate(
       { userId: user.id, movieId },
       {
@@ -152,22 +158,23 @@ export default function HomePage() {
         },
       }
     );
-  };
+  }, [deleteRatingMutation, showToast]);
 
-  const handlePlayTrailer = (movie: Movie) => {
+  const handlePlayTrailer = useCallback((movie: Movie) => {
     setTrailerMovie(movie);
     setIsPlayingTrailer(true);
-  };
+  }, []);
 
-  const activeMovieForModal = selectedMovie
-    ? allMovies.find((m) => m.id === selectedMovie.id) || selectedMovie
-    : null;
+  const activeMovieForModal = useMemo(() => {
+    if (!selectedMovie) return null;
+    return allMovies.find((m) => m.id === selectedMovie.id) || selectedMovie;
+  }, [selectedMovie, allMovies]);
 
-  const getFilteredMovies = () => {
+  const filteredMovies = useMemo(() => {
     let list = allMovies;
 
     if (showMyListOnly) {
-      list = favorites
+      list = favorites;
     } else if (selectedCategory) {
       list = list.filter((m) => m.category === selectedCategory);
     }
@@ -183,16 +190,43 @@ export default function HomePage() {
     }
 
     return list;
-  };
+  }, [allMovies, showMyListOnly, favorites, selectedCategory, searchQuery]);
 
-  const filteredMovies = getFilteredMovies();
   const isBrowsingRowView = !searchQuery && !selectedCategory && !showMyListOnly;
 
-  const recommendedMovies = () => {
+  const recommendedMovies = useMemo(() => {
     return [...allMovies].sort((a, b) => b.matchRate - a.matchRate).slice(0, 5);
-  };
+  }, [allMovies]);
 
-  const popularMovies = [...allMovies].sort((a, b) => (b.views || 0) - (a.views || 0));
+  const popularMovies = useMemo(() => {
+    return [...allMovies].sort((a, b) => (b.views || 0) - (a.views || 0));
+  }, [allMovies]);
+
+  const moviesByUniversity = useMemo(() => {
+    const map: Record<string, Movie[]> = {};
+    for (const movie of allMovies) {
+      if (movie.university) {
+        if (!map[movie.university]) {
+          map[movie.university] = [];
+        }
+        map[movie.university].push(movie);
+      }
+    }
+    return map;
+  }, [allMovies]);
+
+  const moviesByCategory = useMemo(() => {
+    const map: Record<string, Movie[]> = {};
+    for (const movie of allMovies) {
+      if (movie.category) {
+        if (!map[movie.category]) {
+          map[movie.category] = [];
+        }
+        map[movie.category].push(movie);
+      }
+    }
+    return map;
+  }, [allMovies]);
 
   if (isMoviesLoading) {
     return <Loading />;
@@ -216,7 +250,7 @@ export default function HomePage() {
       {isBrowsingRowView ? (
         <main className="flex-1 flex flex-col">
           <MovieHero
-            movies={recommendedMovies()}
+            movies={recommendedMovies}
             onPlayClick={handlePlayTrailer}
             onInfoClick={setSelectedMovie}
           />
@@ -243,7 +277,7 @@ export default function HomePage() {
             )}
 
             {universities.map((uni) => {
-              const uniMovies = allMovies.filter((m) => m.university === uni.name);
+              const uniMovies = moviesByUniversity[uni.name] || [];
               if (uniMovies.length === 0) return null;
 
               return (
@@ -260,7 +294,7 @@ export default function HomePage() {
             })}
 
             {categories.map((category) => {
-              const categoryMovies = allMovies.filter((m) => m.category === category.name);
+              const categoryMovies = moviesByCategory[category.name] || [];
               if (categoryMovies.length === 0) return null;
 
               const displayTitle = CATEGORY_TITLE_MAPPING[category.name];

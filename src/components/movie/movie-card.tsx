@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Image from "next/image";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import AddIcon from "@mui/icons-material/Add";
@@ -11,13 +12,13 @@ import { CATEGORY_TITLE_MAPPING } from "@/core/constants/categories";
 
 interface Props {
   movie: Movie;
-  onClick: () => void;
-  onPlayClick: (e: React.MouseEvent) => void;
+  onClick: (movie: Movie) => void;
+  onPlayClick: (movie: Movie) => void;
   isFavorite: boolean;
-  onToggleFavorite: (e: React.MouseEvent) => void;
+  onToggleFavorite: (movieId: string) => void;
 }
 
-export default function MovieCard({
+function MovieCard({
   movie,
   onClick,
   onPlayClick,
@@ -26,11 +27,25 @@ export default function MovieCard({
 }: Props) {
   const totalScore = movie.ratings.reduce((sum, r) => sum + r.stars, 0);
   const averageRating = movie.ratings.length > 0 ? totalScore / movie.ratings.length : 0;
-  const { currentUser } = useAppStore()
+  const { currentUser } = useAppStore();
+
+  const handleClick = () => {
+    onClick(movie);
+  };
+
+  const handlePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onPlayClick(movie);
+  };
+
+  const handleToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleFavorite(movie.id);
+  };
 
   return (
     <div
-      onClick={onClick}
+      onClick={handleClick}
       className="group relative cursor-pointer bg-zinc-900 rounded-xl overflow-hidden shadow-lg border border-zinc-800/80 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-105 md:hover:scale-112 hover:shadow-2xl hover:shadow-black/50 hover:border-zinc-700/60 z-10 hover:z-20 flex flex-col h-full"
     >
       <div className="relative aspect-video w-full overflow-hidden bg-zinc-950">
@@ -84,20 +99,14 @@ export default function MovieCard({
 
           <div className="flex items-center gap-1.5">
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onPlayClick(e);
-              }}
+              onClick={handlePlay}
               className="p-1 rounded-full bg-zinc-800 text-white hover:bg-white hover:text-black hover:scale-105 active:scale-95 transition-all shadow cursor-pointer border border-zinc-700/50"
               title="ตัวอย่างภาพยนตร์"
             >
               <PlayArrowIcon className="text-base" />
             </button>
             {currentUser && <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleFavorite(e);
-              }}
+              onClick={handleToggle}
               className={`p-1 rounded-full border transition-all cursor-pointer ${isFavorite
                 ? "bg-zinc-800 border-zinc-500 text-green-400 hover:border-white"
                 : "bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
@@ -112,4 +121,6 @@ export default function MovieCard({
     </div>
   );
 }
+
+export default memo(MovieCard);
 

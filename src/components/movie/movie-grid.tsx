@@ -24,10 +24,10 @@ export default function MovieGrid({
         <MovieCard
           key={movie.id}
           movie={movie}
-          onClick={() => onMovieClick(movie)}
-          onPlayClick={() => onPlayClick(movie)}
+          onClick={onMovieClick}
+          onPlayClick={onPlayClick}
           isFavorite={favorites.some((fav) => fav.id === movie.id)}
-          onToggleFavorite={() => onToggleFavorite(movie.id)}
+          onToggleFavorite={onToggleFavorite}
         />
       ))}
     </div>
