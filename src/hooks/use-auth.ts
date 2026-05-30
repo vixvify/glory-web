@@ -9,7 +9,10 @@ export function useRegisterMutation() {
   return useMutation<User, Error, RegisterUser>({
     mutationFn: (data) => authService.register(data),
     onSuccess: () => {
-      showToast("ลงทะเบียนสำเร็จแล้ว! กรุณาเข้าสู่ระบบเพื่อเข้าใช้งาน.", "success");
+      showToast(
+        "ลงทะเบียนสำเร็จแล้ว! กรุณาเข้าสู่ระบบเพื่อเข้าใช้งาน.",
+        "success",
+      );
     },
   });
 }

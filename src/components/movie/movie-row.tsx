@@ -47,7 +47,8 @@ export default function MovieRow({
   const handleScroll = (direction: "left" | "right") => {
     if (rowRef.current) {
       const { clientWidth } = rowRef.current;
-      const scrollAmount = direction === "left" ? -clientWidth * 0.75 : clientWidth * 0.75;
+      const scrollAmount =
+        direction === "left" ? -clientWidth * 0.75 : clientWidth * 0.75;
       rowRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
   };

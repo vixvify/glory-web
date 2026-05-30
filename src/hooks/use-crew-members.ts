@@ -1,6 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { crewMemberService } from "@/infra/container";
-import { CrewMember } from "@/core/domain/movie";
+import {
+  CrewMember,
+  CreateCrewMember,
+  UpdateCrewMember,
+} from "@/core/domain/movie";
 
 export function useCrewMembersQuery() {
   return useQuery<CrewMember[], Error>({
@@ -19,8 +23,8 @@ export function useSearchCrewMembersQuery(query: string, enabled = true) {
 
 export function useCreateCrewMemberMutation() {
   const queryClient = useQueryClient();
-  return useMutation<CrewMember, Error, string>({
-    mutationFn: (name) => crewMemberService.createCrewMember(name),
+  return useMutation<CrewMember, Error, CreateCrewMember>({
+    mutationFn: (crewMember) => crewMemberService.createCrewMember(crewMember),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["crewMembers"] });
     },
@@ -29,8 +33,13 @@ export function useCreateCrewMemberMutation() {
 
 export function useUpdateCrewMemberMutation() {
   const queryClient = useQueryClient();
-  return useMutation<CrewMember, Error, { id: string; name: string }>({
-    mutationFn: ({ id, name }) => crewMemberService.updateCrewMember(id, name),
+  return useMutation<
+    CrewMember,
+    Error,
+    { id: string; crewMember: UpdateCrewMember }
+  >({
+    mutationFn: ({ id, crewMember }) =>
+      crewMemberService.updateCrewMember(id, crewMember),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["crewMembers"] });
       queryClient.invalidateQueries({ queryKey: ["movies"] });

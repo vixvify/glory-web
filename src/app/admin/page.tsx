@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import Link from "next/link";
 import Navbar from "@/components/ui/navbar";
-import { Movie, CreateMovie, UpdateMovie, CrewMember } from "@/core/domain/movie";
+import {
+  Movie,
+  CreateMovie,
+  UpdateMovie,
+  CrewMember,
+} from "@/core/domain/movie";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -29,7 +34,11 @@ import {
   useUpdateMovieMutation,
   useDeleteMovieMutation,
 } from "@/hooks/use-movies";
-import { useCategoriesQuery, useAgeRatingsQuery, useUniversitiesQuery } from "@/hooks/use-master-data";
+import {
+  useCategoriesQuery,
+  useAgeRatingsQuery,
+  useUniversitiesQuery,
+} from "@/hooks/use-master-data";
 import {
   useCrewMembersQuery,
   useCreateCrewMemberMutation,
@@ -85,11 +94,21 @@ export default function AdminPage() {
   const [editingCrew, setEditingCrew] = useState<CrewMember | null>(null);
   const [deleteCrewId, setDeleteCrewId] = useState<string | null>(null);
   const [crewNameInput, setCrewNameInput] = useState("");
+  const [crewPhotoInput, setCrewPhotoInput] = useState<File | null>(null);
+  const [crewPhotoName, setCrewPhotoName] = useState<string | null>(null);
 
-  const [directors, setDirectors] = useState<Array<{ id: string; name: string }>>([{ id: "", name: "" }]);
-  const [producers, setProducers] = useState<Array<{ id: string; name: string }>>([{ id: "", name: "" }]);
-  const [writers, setWriters] = useState<Array<{ id: string; name: string }>>([{ id: "", name: "" }]);
-  const [castMembers, setCastMembers] = useState<Array<{ id: string; name: string }>>([{ id: "", name: "" }]);
+  const [directors, setDirectors] = useState<
+    Array<{ id: string; name: string }>
+  >([{ id: "", name: "" }]);
+  const [producers, setProducers] = useState<
+    Array<{ id: string; name: string }>
+  >([{ id: "", name: "" }]);
+  const [writers, setWriters] = useState<Array<{ id: string; name: string }>>([
+    { id: "", name: "" },
+  ]);
+  const [castMembers, setCastMembers] = useState<
+    Array<{ id: string; name: string }>
+  >([{ id: "", name: "" }]);
 
   const handleBtsFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -112,7 +131,11 @@ export default function AdminPage() {
   const { data: availableAgeRatings = [] } = useAgeRatingsQuery();
   const { data: availableUniversities = [] } = useUniversitiesQuery();
   const { data: availableCrew = [] } = useCrewMembersQuery();
-  const crewOptions = availableCrew.map((c) => ({ id: c.id, name: c.name }));
+  const crewOptions = availableCrew.map((c) => ({
+    id: c.id,
+    name: c.name,
+    photoUrl: c.photoUrl,
+  }));
 
   const createMovieMutation = useCreateMovieMutation();
   const updateMovieMutation = useUpdateMovieMutation();
@@ -180,30 +203,54 @@ export default function AdminPage() {
     setSelectedFileName(null);
     setExistingBtsPhotos(movie.bts?.btsPhotos || []);
     setNewBtsPhotosFiles([]);
-    setBtsVideos(movie.bts?.btsVideo && movie.bts.btsVideo.length > 0 ? movie.bts.btsVideo : [""]);
+    setBtsVideos(
+      movie.bts?.btsVideo && movie.bts.btsVideo.length > 0
+        ? movie.bts.btsVideo
+        : [""],
+    );
 
-    const movieDirectors = movie.crew?.filter(c => c.role.toLowerCase() === "director").map(c => ({
-      id: c.crewMember?.id || "",
-      name: c.crewMember?.name || ""
-    })).filter((x): x is { id: string; name: string } => !!x.name) || [];
+    const movieDirectors =
+      movie.crew
+        ?.filter((c) => c.role.toLowerCase() === "director")
+        .map((c) => ({
+          id: c.crewMember?.id || "",
+          name: c.crewMember?.name || "",
+        }))
+        .filter((x): x is { id: string; name: string } => !!x.name) || [];
 
-    const movieProducers = movie.crew?.filter(c => c.role.toLowerCase() === "producer").map(c => ({
-      id: c.crewMember?.id || "",
-      name: c.crewMember?.name || ""
-    })).filter((x): x is { id: string; name: string } => !!x.name) || [];
+    const movieProducers =
+      movie.crew
+        ?.filter((c) => c.role.toLowerCase() === "producer")
+        .map((c) => ({
+          id: c.crewMember?.id || "",
+          name: c.crewMember?.name || "",
+        }))
+        .filter((x): x is { id: string; name: string } => !!x.name) || [];
 
-    const movieWriters = movie.crew?.filter(c => c.role.toLowerCase() === "writer").map(c => ({
-      id: c.crewMember?.id || "",
-      name: c.crewMember?.name || ""
-    })).filter((x): x is { id: string; name: string } => !!x.name) || [];
+    const movieWriters =
+      movie.crew
+        ?.filter((c) => c.role.toLowerCase() === "writer")
+        .map((c) => ({
+          id: c.crewMember?.id || "",
+          name: c.crewMember?.name || "",
+        }))
+        .filter((x): x is { id: string; name: string } => !!x.name) || [];
 
-    const movieCast = movie.crew?.filter(c => c.role.toLowerCase() === "cast").map(c => ({
-      id: c.crewMember?.id || "",
-      name: c.crewMember?.name || ""
-    })).filter((x): x is { id: string; name: string } => !!x.name) || [];
+    const movieCast =
+      movie.crew
+        ?.filter((c) => c.role.toLowerCase() === "cast")
+        .map((c) => ({
+          id: c.crewMember?.id || "",
+          name: c.crewMember?.name || "",
+        }))
+        .filter((x): x is { id: string; name: string } => !!x.name) || [];
 
-    setDirectors(movieDirectors.length > 0 ? movieDirectors : [{ id: "", name: "" }]);
-    setProducers(movieProducers.length > 0 ? movieProducers : [{ id: "", name: "" }]);
+    setDirectors(
+      movieDirectors.length > 0 ? movieDirectors : [{ id: "", name: "" }],
+    );
+    setProducers(
+      movieProducers.length > 0 ? movieProducers : [{ id: "", name: "" }],
+    );
     setWriters(movieWriters.length > 0 ? movieWriters : [{ id: "", name: "" }]);
     setCastMembers(movieCast.length > 0 ? movieCast : [{ id: "", name: "" }]);
 
@@ -231,7 +278,7 @@ export default function AdminPage() {
   const onSubmit = async (data: MovieForm) => {
     try {
       setIsSavingLocal(true);
-      const activeVideos = btsVideos.map(v => v.trim()).filter(Boolean);
+      const activeVideos = btsVideos.map((v) => v.trim()).filter(Boolean);
       const thumbnailFile = data.thumbnail;
       const validated = parseSchema(createMovieSchema, {
         ...data,
@@ -243,10 +290,18 @@ export default function AdminPage() {
         btsPhotos: editingMovie
           ? [...existingBtsPhotos, ...newBtsPhotosFiles]
           : newBtsPhotosFiles,
-        director: directors.filter(d => d.name.trim() !== "").map(d => d.id || d.name.trim()),
-        producer: producers.filter(p => p.name.trim() !== "").map(p => p.id || p.name.trim()),
-        writer: writers.filter(w => w.name.trim() !== "").map(w => w.id || w.name.trim()),
-        cast: castMembers.filter(c => c.name.trim() !== "").map(c => c.id || c.name.trim()),
+        director: directors
+          .filter((d) => d.name.trim() !== "")
+          .map((d) => d.id || d.name.trim()),
+        producer: producers
+          .filter((p) => p.name.trim() !== "")
+          .map((p) => p.id || p.name.trim()),
+        writer: writers
+          .filter((w) => w.name.trim() !== "")
+          .map((w) => w.id || w.name.trim()),
+        cast: castMembers
+          .filter((c) => c.name.trim() !== "")
+          .map((c) => c.id || c.name.trim()),
       });
 
       if (editingMovie) {
@@ -255,7 +310,11 @@ export default function AdminPage() {
           title: validated.title,
           description: validated.description,
           category: validated.category,
-          thumbnail: (validated.thumbnail instanceof File || typeof validated.thumbnail === "string") ? validated.thumbnail : editingMovie.thumbnail,
+          thumbnail:
+            validated.thumbnail instanceof File ||
+            typeof validated.thumbnail === "string"
+              ? validated.thumbnail
+              : editingMovie.thumbnail,
           youtubeUrl: validated.youtubeUrl,
           year: validated.year,
           matchRate: validated.matchRate,
@@ -291,7 +350,8 @@ export default function AdminPage() {
           writer: validated.writer || undefined,
           cast: validated.cast || undefined,
           btsVideo: validated.btsVideo || undefined,
-          btsPhotos: (validated.btsPhotos as CreateMovie["btsPhotos"]) || undefined,
+          btsPhotos:
+            (validated.btsPhotos as CreateMovie["btsPhotos"]) || undefined,
         };
         await createMovieMutation.mutateAsync(newMoviePayload);
         showToast("เพิ่มภาพยนตร์เรียบร้อยแล้ว", "success");
@@ -300,7 +360,10 @@ export default function AdminPage() {
       setEditingMovie(null);
       reset();
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการบันทึกภาพยนตร์";
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "เกิดข้อผิดพลาดในการบันทึกภาพยนตร์";
       showToast(errorMessage, "error");
       console.error(err);
     } finally {
@@ -315,7 +378,8 @@ export default function AdminPage() {
         await deleteMovieMutation.mutateAsync(deleteMovieId);
         showToast("ลบภาพยนตร์เรียบร้อยแล้ว", "success");
       } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to delete movie";
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to delete movie";
         alert(errorMessage);
       } finally {
         setIsDeletingLocal(false);
@@ -327,12 +391,16 @@ export default function AdminPage() {
   const handleOpenAddCrew = () => {
     setEditingCrew(null);
     setCrewNameInput("");
+    setCrewPhotoInput(null);
+    setCrewPhotoName(null);
     setIsCrewFormOpen(true);
   };
 
   const handleOpenEditCrew = (crew: CrewMember) => {
     setEditingCrew(crew);
     setCrewNameInput(crew.name);
+    setCrewPhotoInput(null);
+    setCrewPhotoName(null);
     setIsCrewFormOpen(true);
   };
 
@@ -344,21 +412,31 @@ export default function AdminPage() {
     }
     try {
       setIsSavingLocal(true);
+
       if (editingCrew) {
         await updateCrewMutation.mutateAsync({
           id: editingCrew.id,
-          name: crewNameInput.trim(),
+          crewMember: {
+            name: crewNameInput.trim(),
+            photo: crewPhotoInput || editingCrew.photoUrl || null,
+          },
         });
         showToast("แก้ไขข้อมูลทีมงานเรียบร้อยแล้ว", "success");
       } else {
-        await createCrewMutation.mutateAsync(crewNameInput.trim());
+        await createCrewMutation.mutateAsync({
+          name: crewNameInput.trim(),
+          photo: crewPhotoInput,
+        });
         showToast("เพิ่มทีมงานเรียบร้อยแล้ว", "success");
       }
       setIsCrewFormOpen(false);
       setEditingCrew(null);
       setCrewNameInput("");
+      setCrewPhotoInput(null);
+      setCrewPhotoName(null);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการบันทึกข้อมูล";
+      const errorMessage =
+        err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการบันทึกข้อมูล";
       showToast(errorMessage, "error");
       console.error(err);
     } finally {
@@ -373,7 +451,8 @@ export default function AdminPage() {
         await deleteCrewMutation.mutateAsync(deleteCrewId);
         showToast("ลบข้อมูลทีมงานเรียบร้อยแล้ว", "success");
       } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการลบข้อมูล";
+        const errorMessage =
+          err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการลบข้อมูล";
         showToast(errorMessage, "error");
         console.error(err);
       } finally {
@@ -406,7 +485,7 @@ export default function AdminPage() {
         (m) =>
           m.title.toLowerCase().includes(q) ||
           m.category.toLowerCase().includes(q) ||
-          m.description.toLowerCase().includes(q)
+          m.description.toLowerCase().includes(q),
       );
     }
 
@@ -437,16 +516,16 @@ export default function AdminPage() {
     <div className="min-h-screen bg-background text-white flex flex-col font-sans select-none pb-20">
       <Navbar
         searchQuery=""
-        onSearchChange={() => { }}
+        onSearchChange={() => {}}
         selectedCategory={null}
-        onCategoryChange={() => { }}
+        onCategoryChange={() => {}}
         showMyListOnly={false}
-        onMyListOnlyChange={() => { }}
+        onMyListOnlyChange={() => {}}
         currentUser={currentUser}
         onSignOut={() => {
           logoutMutation.mutate();
         }}
-        onSignInClick={() => { }}
+        onSignInClick={() => {}}
         categories={availableCategories}
       />
 
@@ -454,7 +533,10 @@ export default function AdminPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs text-zinc-400">
-              <Link href="/" className="hover:text-brand transition-colors flex items-center gap-1">
+              <Link
+                href="/"
+                className="hover:text-brand transition-colors flex items-center gap-1"
+              >
                 <ArrowBackIcon className="text-sm" /> Back to Home
               </Link>
               <span>/</span>
@@ -480,7 +562,9 @@ export default function AdminPage() {
               <MovieIcon className="text-2xl" />
             </div>
             <div className="space-y-0.5">
-              <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold text-[10px]">Total Titles</p>
+              <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold text-[10px]">
+                Total Titles
+              </p>
               <h3 className="text-2xl font-black">{movies.length}</h3>
             </div>
           </div>
@@ -490,8 +574,12 @@ export default function AdminPage() {
               <CategoryIcon className="text-2xl" />
             </div>
             <div className="space-y-0.5">
-              <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold text-[10px]">Categories</p>
-              <h3 className="text-2xl font-black">{availableCategories.length}</h3>
+              <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold text-[10px]">
+                Categories
+              </p>
+              <h3 className="text-2xl font-black">
+                {availableCategories.length}
+              </h3>
             </div>
           </div>
 
@@ -500,8 +588,12 @@ export default function AdminPage() {
               <VisibilityIcon className="text-2xl" />
             </div>
             <div className="space-y-0.5">
-              <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold text-[10px]">Total Views</p>
-              <h3 className="text-2xl font-black">{totalViews.toLocaleString()}</h3>
+              <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold text-[10px]">
+                Total Views
+              </p>
+              <h3 className="text-2xl font-black">
+                {totalViews.toLocaleString()}
+              </h3>
             </div>
           </div>
 
@@ -510,7 +602,9 @@ export default function AdminPage() {
               <PeopleIcon className="text-2xl" />
             </div>
             <div className="space-y-0.5">
-              <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold text-[10px]">Crew Directory</p>
+              <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold text-[10px]">
+                Crew Directory
+              </p>
               <h3 className="text-2xl font-black">{availableCrew.length}</h3>
             </div>
           </div>
@@ -519,10 +613,11 @@ export default function AdminPage() {
         <div className="flex border-b border-zinc-800/60 gap-8">
           <button
             onClick={() => setActiveTab("movies")}
-            className={`pb-4 text-sm font-bold transition-all relative ${activeTab === "movies"
-              ? "text-brand"
-              : "text-zinc-400 hover:text-zinc-200 cursor-pointer"
-              }`}
+            className={`pb-4 text-sm font-bold transition-all relative ${
+              activeTab === "movies"
+                ? "text-brand"
+                : "text-zinc-400 hover:text-zinc-200 cursor-pointer"
+            }`}
           >
             ภาพยนตร์ ({movies.length})
             {activeTab === "movies" && (
@@ -531,10 +626,11 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => setActiveTab("crew")}
-            className={`pb-4 text-sm font-bold transition-all relative ${activeTab === "crew"
-              ? "text-brand"
-              : "text-zinc-400 hover:text-zinc-200 cursor-pointer"
-              }`}
+            className={`pb-4 text-sm font-bold transition-all relative ${
+              activeTab === "crew"
+                ? "text-brand"
+                : "text-zinc-400 hover:text-zinc-200 cursor-pointer"
+            }`}
           >
             ทีมงาน & นักแสดง ({availableCrew.length})
             {activeTab === "crew" && (
@@ -569,15 +665,23 @@ export default function AdminPage() {
 
               <div className="flex items-center gap-3 self-end md:self-auto">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-zinc-400 font-semibold whitespace-nowrap">Filter:</span>
+                  <span className="text-xs text-zinc-400 font-semibold whitespace-nowrap">
+                    Filter:
+                  </span>
                   <select
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value)}
                     className="text-xs bg-zinc-900 border border-zinc-800 text-white rounded-lg px-3 py-1.5 focus:border-brand focus:outline-none cursor-pointer"
                   >
-                    <option value="" className="bg-zinc-900 text-white">All Categories</option>
+                    <option value="" className="bg-zinc-900 text-white">
+                      All Categories
+                    </option>
                     {availableCategories.map((cat) => (
-                      <option key={cat.id} value={cat.name} className="bg-zinc-900 text-white">
+                      <option
+                        key={cat.id}
+                        value={cat.name}
+                        className="bg-zinc-900 text-white"
+                      >
                         {cat.name}
                       </option>
                     ))}
@@ -585,15 +689,23 @@ export default function AdminPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-zinc-400 font-semibold whitespace-nowrap">Sort:</span>
+                  <span className="text-xs text-zinc-400 font-semibold whitespace-nowrap">
+                    Sort:
+                  </span>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as Sortby)}
                     className="text-xs bg-zinc-900 border border-zinc-800 text-white rounded-lg px-3 py-1.5 focus:border-brand focus:outline-none cursor-pointer"
                   >
-                    <option value="title" className="bg-zinc-900 text-white">Alphabetical</option>
-                    <option value="year" className="bg-zinc-900 text-white">Release Year</option>
-                    <option value="views" className="bg-zinc-900 text-white">Popularity</option>
+                    <option value="title" className="bg-zinc-900 text-white">
+                      Alphabetical
+                    </option>
+                    <option value="year" className="bg-zinc-900 text-white">
+                      Release Year
+                    </option>
+                    <option value="views" className="bg-zinc-900 text-white">
+                      Popularity
+                    </option>
                   </select>
                 </div>
               </div>
@@ -614,7 +726,10 @@ export default function AdminPage() {
                 <tbody className="divide-y divide-zinc-800/30 text-sm">
                   {filteredMovies.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-16 text-center text-zinc-500 font-light">
+                      <td
+                        colSpan={6}
+                        className="py-16 text-center text-zinc-500 font-light"
+                      >
                         No movies matching your active filter.
                       </td>
                     </tr>
@@ -657,7 +772,9 @@ export default function AdminPage() {
                             <span className="px-1.5 py-0.5 text-[10px] font-bold border border-zinc-700 text-zinc-400 rounded leading-none">
                               {movie.ageRating}
                             </span>
-                            <span className="text-[10px] text-emerald-400 font-bold">{movie.matchRate}% Match</span>
+                            <span className="text-[10px] text-emerald-400 font-bold">
+                              {movie.matchRate}% Match
+                            </span>
                           </div>
                         </td>
 
@@ -740,14 +857,17 @@ export default function AdminPage() {
                 <tbody className="divide-y divide-zinc-800/30 text-sm">
                   {filteredCrew.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-16 text-center text-zinc-500 font-light">
+                      <td
+                        colSpan={4}
+                        className="py-16 text-center text-zinc-500 font-light"
+                      >
                         ไม่พบรายชื่อทีมงานที่ระบุ
                       </td>
                     </tr>
                   ) : (
                     filteredCrew.map((member) => {
                       const movieCount = movies.filter((m) =>
-                        m.crew?.some((c) => c.crewMember?.id === member.id)
+                        m.crew?.some((c) => c.crewMember?.id === member.id),
                       ).length;
 
                       return (
@@ -756,9 +876,17 @@ export default function AdminPage() {
                           className="group/row hover:bg-zinc-900/10 transition-colors"
                         >
                           <td className="py-4 px-6 flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-brand/10 border border-brand/20 flex items-center justify-center text-brand flex-shrink-0">
-                              <PersonIcon className="text-lg" />
-                            </div>
+                            {member.photoUrl ? (
+                              <img
+                                src={member.photoUrl}
+                                alt={member.name}
+                                className="w-10 h-10 rounded-full object-cover border border-zinc-800 flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-brand/10 border border-brand/20 flex items-center justify-center text-brand flex-shrink-0">
+                                <PersonIcon className="text-lg" />
+                              </div>
+                            )}
                             <div>
                               <h4 className="font-bold text-white group-hover/row:text-brand transition-colors">
                                 {member.name}
@@ -770,20 +898,26 @@ export default function AdminPage() {
                           </td>
 
                           <td className="py-4 px-6">
-                            <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${movieCount > 0
-                              ? "bg-brand/10 text-brand border border-brand/20"
-                              : "bg-zinc-800/60 text-zinc-400 border border-zinc-800"
-                              }`}>
+                            <span
+                              className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
+                                movieCount > 0
+                                  ? "bg-brand/10 text-brand border border-brand/20"
+                                  : "bg-zinc-800/60 text-zinc-400 border border-zinc-800"
+                              }`}
+                            >
                               มีส่วนร่วมภาพยนตร์ {movieCount} เรื่อง
                             </span>
                           </td>
 
                           <td className="py-4 px-6 text-zinc-450 font-light">
-                            {new Date(member.createdAt).toLocaleDateString("th-TH", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })}
+                            {new Date(member.createdAt).toLocaleDateString(
+                              "th-TH",
+                              {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              },
+                            )}
                           </td>
 
                           <td className="py-4 px-6 text-right">
@@ -833,7 +967,11 @@ export default function AdminPage() {
                 </p>
               </div>
 
-              <form id="movie-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              <form
+                id="movie-form"
+                onSubmit={handleSubmit(onSubmit)}
+                className="space-y-5"
+              >
                 <Input
                   label="Title"
                   placeholder="e.g. Interstellar"
@@ -843,13 +981,21 @@ export default function AdminPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-300">Category</label>
+                    <label className="text-xs font-semibold text-zinc-300">
+                      Category
+                    </label>
                     <select
-                      {...register("category", { required: "Category is required" })}
+                      {...register("category", {
+                        required: "Category is required",
+                      })}
                       className="w-full bg-black/40 border border-zinc-800 focus:border-brand rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition-colors cursor-pointer"
                     >
                       {availableCategories.map((cat) => (
-                        <option key={cat.id} value={cat.name} className="bg-zinc-900 text-white">
+                        <option
+                          key={cat.id}
+                          value={cat.name}
+                          className="bg-zinc-900 text-white"
+                        >
                           {cat.name}
                         </option>
                       ))}
@@ -857,13 +1003,21 @@ export default function AdminPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-300">Age Rating</label>
+                    <label className="text-xs font-semibold text-zinc-300">
+                      Age Rating
+                    </label>
                     <select
-                      {...register("ageRating", { required: "Age rating is required" })}
+                      {...register("ageRating", {
+                        required: "Age rating is required",
+                      })}
                       className="w-full bg-black/40 border border-zinc-800 focus:border-brand rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition-colors cursor-pointer"
                     >
                       {availableAgeRatings.map((rating) => (
-                        <option key={rating.id} value={rating.name} className="bg-zinc-900 text-white">
+                        <option
+                          key={rating.id}
+                          value={rating.name}
+                          className="bg-zinc-900 text-white"
+                        >
                           {rating.name}
                         </option>
                       ))}
@@ -900,12 +1054,16 @@ export default function AdminPage() {
                     label="Duration"
                     placeholder="e.g. 2h 10m"
                     error={errors.duration?.message}
-                    {...register("duration", { required: "Duration is required" })}
+                    {...register("duration", {
+                      required: "Duration is required",
+                    })}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-300">Cover Image</label>
+                  <label className="text-xs font-semibold text-zinc-300">
+                    Cover Image
+                  </label>
                   <div className="relative group/file">
                     <Controller
                       name="thumbnail"
@@ -926,9 +1084,20 @@ export default function AdminPage() {
                         />
                       )}
                     />
-                    <div className={`w-full bg-black/40 border ${errors.thumbnail ? "border-red-500" : "border-zinc-800 group-hover/file:border-brand"
-                      } rounded-xl px-4 py-3 text-sm text-zinc-405 flex items-center justify-between transition-colors`}>
-                      <span className={selectedFileName ? "text-white font-medium truncate max-w-[70%]" : "text-zinc-400"}>
+                    <div
+                      className={`w-full bg-black/40 border ${
+                        errors.thumbnail
+                          ? "border-red-500"
+                          : "border-zinc-800 group-hover/file:border-brand"
+                      } rounded-xl px-4 py-3 text-sm text-zinc-405 flex items-center justify-between transition-colors`}
+                    >
+                      <span
+                        className={
+                          selectedFileName
+                            ? "text-white font-medium truncate max-w-[70%]"
+                            : "text-zinc-400"
+                        }
+                      >
                         {selectedFileName || "Upload cover image file..."}
                       </span>
                       <span className="px-3 py-1 bg-zinc-800 text-zinc-300 rounded-lg text-xs font-semibold group-hover/file:bg-brand group-hover/file:text-white transition-colors">
@@ -937,20 +1106,29 @@ export default function AdminPage() {
                     </div>
                   </div>
                   {errors.thumbnail && (
-                    <span className="text-[10px] text-red-500 block pl-1 font-semibold">{errors.thumbnail.message}</span>
+                    <span className="text-[10px] text-red-500 block pl-1 font-semibold">
+                      {errors.thumbnail.message}
+                    </span>
                   )}
-                  {editingMovie && typeof editingMovie.thumbnail === "string" && (
-                    <p className="text-[10px] text-zinc-500 pl-1 leading-relaxed">
-                      Current: <span className="text-brand font-medium truncate max-w-[200px] inline-block align-bottom">{editingMovie.thumbnail.split("/").pop()}</span> (Leave blank to keep existing)
-                    </p>
-                  )}
+                  {editingMovie &&
+                    typeof editingMovie.thumbnail === "string" && (
+                      <p className="text-[10px] text-zinc-500 pl-1 leading-relaxed">
+                        Current:{" "}
+                        <span className="text-brand font-medium truncate max-w-[200px] inline-block align-bottom">
+                          {editingMovie.thumbnail.split("/").pop()}
+                        </span>{" "}
+                        (Leave blank to keep existing)
+                      </p>
+                    )}
                 </div>
 
                 <Input
                   label="YouTube Trailer URL"
                   placeholder="https://www.youtube.com/watch?v=..."
                   error={errors.youtubeUrl?.message}
-                  {...register("youtubeUrl", { required: "YouTube URL is required" })}
+                  {...register("youtubeUrl", {
+                    required: "YouTube URL is required",
+                  })}
                 />
 
                 <div className="border-t border-zinc-800/60 pt-4 mt-2 space-y-4">
@@ -959,14 +1137,22 @@ export default function AdminPage() {
                   </h4>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-300">University / Institution (สถาบัน/มหาวิทยาลัย)</label>
+                    <label className="text-xs font-semibold text-zinc-300">
+                      University / Institution (สถาบัน/มหาวิทยาลัย)
+                    </label>
                     <select
                       {...register("university")}
                       className="w-full bg-black/40 border border-zinc-800 focus:border-brand rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition-colors cursor-pointer"
                     >
-                      <option value="" className="bg-zinc-900 text-zinc-400">None / Select University</option>
+                      <option value="" className="bg-zinc-900 text-zinc-400">
+                        None / Select University
+                      </option>
                       {availableUniversities.map((uni) => (
-                        <option key={uni.id} value={uni.name} className="bg-zinc-900 text-white">
+                        <option
+                          key={uni.id}
+                          value={uni.name}
+                          className="bg-zinc-900 text-white"
+                        >
                           {uni.name}
                         </option>
                       ))}
@@ -974,7 +1160,9 @@ export default function AdminPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-300">Director (ผู้กำกับ)</label>
+                    <label className="text-xs font-semibold text-zinc-300">
+                      Director (ผู้กำกับ)
+                    </label>
                     <div className="space-y-2">
                       {directors.map((director, idx) => (
                         <div key={idx} className="flex gap-2 items-center">
@@ -991,7 +1179,11 @@ export default function AdminPage() {
                           {directors.length > 1 && (
                             <button
                               type="button"
-                              onClick={() => setDirectors(directors.filter((_, i) => i !== idx))}
+                              onClick={() =>
+                                setDirectors(
+                                  directors.filter((_, i) => i !== idx),
+                                )
+                              }
                               className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer flex-shrink-0"
                             >
                               <CloseIcon className="text-sm" />
@@ -1002,7 +1194,9 @@ export default function AdminPage() {
                       <Button
                         type="button"
                         variant="secondary"
-                        onClick={() => setDirectors([...directors, { id: "", name: "" }])}
+                        onClick={() =>
+                          setDirectors([...directors, { id: "", name: "" }])
+                        }
                         className="py-1.5 px-3 text-[11px] h-8 w-fit flex items-center gap-1 bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 hover:text-white text-zinc-300 font-semibold"
                       >
                         <AddIcon className="text-xs" /> Add Director
@@ -1011,7 +1205,9 @@ export default function AdminPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-300">Producer (ผู้อำนวยการสร้าง)</label>
+                    <label className="text-xs font-semibold text-zinc-300">
+                      Producer (ผู้อำนวยการสร้าง)
+                    </label>
                     <div className="space-y-2">
                       {producers.map((producer, idx) => (
                         <div key={idx} className="flex gap-2 items-center">
@@ -1028,7 +1224,11 @@ export default function AdminPage() {
                           {producers.length > 1 && (
                             <button
                               type="button"
-                              onClick={() => setProducers(producers.filter((_, i) => i !== idx))}
+                              onClick={() =>
+                                setProducers(
+                                  producers.filter((_, i) => i !== idx),
+                                )
+                              }
                               className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer flex-shrink-0"
                             >
                               <CloseIcon className="text-sm" />
@@ -1039,7 +1239,9 @@ export default function AdminPage() {
                       <Button
                         type="button"
                         variant="secondary"
-                        onClick={() => setProducers([...producers, { id: "", name: "" }])}
+                        onClick={() =>
+                          setProducers([...producers, { id: "", name: "" }])
+                        }
                         className="py-1.5 px-3 text-[11px] h-8 w-fit flex items-center gap-1 bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 hover:text-white text-zinc-300 font-semibold"
                       >
                         <AddIcon className="text-xs" /> Add Producer
@@ -1048,7 +1250,9 @@ export default function AdminPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-300">Writer (ผู้เขียนบท)</label>
+                    <label className="text-xs font-semibold text-zinc-300">
+                      Writer (ผู้เขียนบท)
+                    </label>
                     <div className="space-y-2">
                       {writers.map((writer, idx) => (
                         <div key={idx} className="flex gap-2 items-center">
@@ -1065,7 +1269,9 @@ export default function AdminPage() {
                           {writers.length > 1 && (
                             <button
                               type="button"
-                              onClick={() => setWriters(writers.filter((_, i) => i !== idx))}
+                              onClick={() =>
+                                setWriters(writers.filter((_, i) => i !== idx))
+                              }
                               className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer flex-shrink-0"
                             >
                               <CloseIcon className="text-sm" />
@@ -1076,7 +1282,9 @@ export default function AdminPage() {
                       <Button
                         type="button"
                         variant="secondary"
-                        onClick={() => setWriters([...writers, { id: "", name: "" }])}
+                        onClick={() =>
+                          setWriters([...writers, { id: "", name: "" }])
+                        }
                         className="py-1.5 px-3 text-[11px] h-8 w-fit flex items-center gap-1 bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 hover:text-white text-zinc-300 font-semibold"
                       >
                         <AddIcon className="text-xs" /> Add Writer
@@ -1085,7 +1293,9 @@ export default function AdminPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-300">Cast (นักแสดง)</label>
+                    <label className="text-xs font-semibold text-zinc-300">
+                      Cast (นักแสดง)
+                    </label>
                     <div className="space-y-2">
                       {castMembers.map((actor, idx) => (
                         <div key={idx} className="flex gap-2 items-center">
@@ -1102,7 +1312,11 @@ export default function AdminPage() {
                           {castMembers.length > 1 && (
                             <button
                               type="button"
-                              onClick={() => setCastMembers(castMembers.filter((_, i) => i !== idx))}
+                              onClick={() =>
+                                setCastMembers(
+                                  castMembers.filter((_, i) => i !== idx),
+                                )
+                              }
                               className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer flex-shrink-0"
                             >
                               <CloseIcon className="text-sm" />
@@ -1113,7 +1327,9 @@ export default function AdminPage() {
                       <Button
                         type="button"
                         variant="secondary"
-                        onClick={() => setCastMembers([...castMembers, { id: "", name: "" }])}
+                        onClick={() =>
+                          setCastMembers([...castMembers, { id: "", name: "" }])
+                        }
                         className="py-1.5 px-3 text-[11px] h-8 w-fit flex items-center gap-1 bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 hover:text-white text-zinc-300 font-semibold"
                       >
                         <AddIcon className="text-xs" /> Add Actor
@@ -1143,7 +1359,9 @@ export default function AdminPage() {
                             <button
                               type="button"
                               onClick={() => {
-                                setBtsVideos(btsVideos.filter((_, i) => i !== idx));
+                                setBtsVideos(
+                                  btsVideos.filter((_, i) => i !== idx),
+                                );
                               }}
                               className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer"
                             >
@@ -1168,11 +1386,19 @@ export default function AdminPage() {
                       BTS Photos (รูปภาพเบื้องหลัง)
                     </label>
 
-                    {(existingBtsPhotos.length > 0 || newBtsPhotosFiles.length > 0) && (
+                    {(existingBtsPhotos.length > 0 ||
+                      newBtsPhotosFiles.length > 0) && (
                       <div className="grid grid-cols-4 gap-2 mb-3">
                         {existingBtsPhotos.map((url, idx) => (
-                          <div key={`existing-${idx}`} className="relative group aspect-square rounded-xl overflow-hidden border border-zinc-800 bg-black/40 shadow-sm">
-                            <img src={url} alt="BTS Preview" className="w-full h-full object-cover" />
+                          <div
+                            key={`existing-${idx}`}
+                            className="relative group aspect-square rounded-xl overflow-hidden border border-zinc-800 bg-black/40 shadow-sm"
+                          >
+                            <img
+                              src={url}
+                              alt="BTS Preview"
+                              className="w-full h-full object-cover"
+                            />
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                               <button
                                 type="button"
@@ -1182,15 +1408,24 @@ export default function AdminPage() {
                                 <CloseIcon className="text-xs" />
                               </button>
                             </div>
-                            <span className="absolute bottom-1 left-1 px-1 py-0.5 bg-black/75 rounded text-[8px] text-zinc-400 font-bold uppercase tracking-wider scale-90 origin-bottom-left">Saved</span>
+                            <span className="absolute bottom-1 left-1 px-1 py-0.5 bg-black/75 rounded text-[8px] text-zinc-400 font-bold uppercase tracking-wider scale-90 origin-bottom-left">
+                              Saved
+                            </span>
                           </div>
                         ))}
 
                         {newBtsPhotosFiles.map((file, idx) => {
                           const objectUrl = URL.createObjectURL(file);
                           return (
-                            <div key={`new-${idx}`} className="relative group aspect-square rounded-xl overflow-hidden border border-brand/40 bg-black/40 shadow-sm">
-                              <img src={objectUrl} alt="BTS Preview" className="w-full h-full object-cover" />
+                            <div
+                              key={`new-${idx}`}
+                              className="relative group aspect-square rounded-xl overflow-hidden border border-brand/40 bg-black/40 shadow-sm"
+                            >
+                              <img
+                                src={objectUrl}
+                                alt="BTS Preview"
+                                className="w-full h-full object-cover"
+                              />
                               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                 <button
                                   type="button"
@@ -1200,7 +1435,9 @@ export default function AdminPage() {
                                   <CloseIcon className="text-xs" />
                                 </button>
                               </div>
-                              <span className="absolute bottom-1 left-1 px-1 py-0.5 bg-brand/80 rounded text-[8px] text-white font-bold uppercase tracking-wider scale-90 origin-bottom-left">New</span>
+                              <span className="absolute bottom-1 left-1 px-1 py-0.5 bg-brand/80 rounded text-[8px] text-white font-bold uppercase tracking-wider scale-90 origin-bottom-left">
+                                New
+                              </span>
                             </div>
                           );
                         })}
@@ -1231,16 +1468,23 @@ export default function AdminPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-300">Description</label>
+                  <label className="text-xs font-semibold text-zinc-300">
+                    Description
+                  </label>
                   <textarea
                     rows={4}
                     placeholder="Enter short storyline..."
-                    {...register("description", { required: "Description is required" })}
-                    className={`w-full bg-black/40 border ${errors.description ? "border-red-500" : "border-zinc-800"
-                      } rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand transition-colors resize-none`}
+                    {...register("description", {
+                      required: "Description is required",
+                    })}
+                    className={`w-full bg-black/40 border ${
+                      errors.description ? "border-red-500" : "border-zinc-800"
+                    } rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand transition-colors resize-none`}
                   />
                   {errors.description && (
-                    <span className="text-[10px] text-red-500 block pl-1 font-semibold">{errors.description.message}</span>
+                    <span className="text-[10px] text-red-500 block pl-1 font-semibold">
+                      {errors.description.message}
+                    </span>
                   )}
                 </div>
               </form>
@@ -1275,9 +1519,12 @@ export default function AdminPage() {
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-lg font-bold text-white">Permanently Delete Film?</h3>
+              <h3 className="text-lg font-bold text-white">
+                Permanently Delete Film?
+              </h3>
               <p className="text-xs text-zinc-400 leading-relaxed font-light">
-                This action is permanent. The selected title will be purged immediately from the library catalog.
+                This action is permanent. The selected title will be purged
+                immediately from the library catalog.
               </p>
             </div>
 
@@ -1313,7 +1560,9 @@ export default function AdminPage() {
 
             <div>
               <h3 className="text-xl font-bold bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent">
-                {editingCrew ? "แก้ไขข้อมูลทีมงาน" : "เพิ่มทีมงาน / นักแสดงใหม่"}
+                {editingCrew
+                  ? "แก้ไขข้อมูลทีมงาน"
+                  : "เพิ่มทีมงาน / นักแสดงใหม่"}
               </h3>
               <p className="text-xs text-zinc-400 mt-1 font-light">
                 กรอกรายชื่อทีมงานหรือนักแสดงที่ต้องการเพิ่มเข้าสู่ระบบเพื่อใช้เป็นตัวเลือกสำหรับภาพยนตร์
@@ -1322,7 +1571,9 @@ export default function AdminPage() {
 
             <form onSubmit={handleCrewSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-zinc-300">ชื่อ-นามสกุล</label>
+                <label className="text-xs font-semibold text-zinc-300">
+                  ชื่อ-นามสกุล
+                </label>
                 <input
                   type="text"
                   placeholder="เช่น สมชาย ใจดี"
@@ -1331,6 +1582,50 @@ export default function AdminPage() {
                   className="w-full bg-black/40 border border-zinc-800 focus:border-brand rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition-colors"
                   required
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-300">
+                  รูปภาพประจำตัว (อัปโหลดรูปภาพ)
+                </label>
+                <div className="relative group/file">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null;
+                      setCrewPhotoInput(file);
+                      setCrewPhotoName(file?.name ?? null);
+                    }}
+                  />
+                  <div className="w-full bg-black/40 border border-zinc-800 group-hover/file:border-brand rounded-xl px-4 py-3 text-sm text-zinc-405 flex items-center justify-between transition-colors">
+                    <span
+                      className={
+                        crewPhotoName
+                          ? "text-white font-medium truncate max-w-[70%]"
+                          : "text-zinc-400"
+                      }
+                    >
+                      {crewPhotoName || "อัปโหลดรูปภาพประจำตัว..."}
+                    </span>
+                    <span className="px-3 py-1 bg-zinc-800 text-zinc-300 rounded-lg text-xs font-semibold group-hover/file:bg-brand group-hover/file:text-white transition-colors">
+                      เลือกไฟล์
+                    </span>
+                  </div>
+                </div>
+                {editingCrew && editingCrew.photoUrl && !crewPhotoInput && (
+                  <div className="flex items-center gap-2 mt-2 pl-1">
+                    <img
+                      src={editingCrew.photoUrl}
+                      alt={editingCrew.name}
+                      className="w-8 h-8 rounded-full object-cover border border-zinc-800 shadow-sm"
+                    />
+                    <span className="text-[10px] text-zinc-550 font-medium">
+                      รูปภาพปัจจุบันในระบบ
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 border-t border-zinc-800/40 flex items-center gap-3">
@@ -1363,9 +1658,12 @@ export default function AdminPage() {
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-lg font-bold text-white">ยืนยันการลบรายชื่อทีมงาน?</h3>
+              <h3 className="text-lg font-bold text-white">
+                ยืนยันการลบรายชื่อทีมงาน?
+              </h3>
               <p className="text-xs text-zinc-400 leading-relaxed font-light">
-                การลบนี้เป็นแบบถาวรและไม่สามารถเรียกคืนได้ การลบรายชื่อนี้อาจส่งผลต่อข้อมูลของภาพยนตร์ที่มีทีมงานท่านนี้มีส่วนร่วมอยู่
+                การลบนี้เป็นแบบถาวรและไม่สามารถเรียกคืนได้
+                การลบรายชื่อนี้อาจส่งผลต่อข้อมูลของภาพยนตร์ที่มีทีมงานท่านนี้มีส่วนร่วมอยู่
               </p>
             </div>
 
@@ -1400,7 +1698,9 @@ export default function AdminPage() {
                 {isDeleting ? "กำลังลบภาพยนตร์..." : "กำลังบันทึกภาพยนตร์..."}
               </h3>
               <p className="text-xs text-zinc-400 font-light">
-                {isDeleting ? "กรุณารอสักครู่ ระบบกำลังลบข้อมูลภาพยนตร์จากระบบ" : "กรุณารอสักครู่ ระบบกำลังอัปโหลดข้อมูลและภาพปก"}
+                {isDeleting
+                  ? "กรุณารอสักครู่ ระบบกำลังลบข้อมูลภาพยนตร์จากระบบ"
+                  : "กรุณารอสักครู่ ระบบกำลังอัปโหลดข้อมูลและภาพปก"}
               </p>
             </div>
           </div>

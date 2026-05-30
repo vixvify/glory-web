@@ -67,12 +67,41 @@ export default function MovieDetailsModal({
   if (!isOpen) return null;
 
   const totalScore = movie.ratings.reduce((sum, r) => sum + r.stars, 0);
-  const averageRating = movie.ratings.length > 0 ? totalScore / movie.ratings.length : 0;
+  const averageRating =
+    movie.ratings.length > 0 ? totalScore / movie.ratings.length : 0;
 
-  const directors = useMemo(() => movie.crew?.filter(c => c.role.toLowerCase() === "director").map(c => c.crewMember?.name).filter(Boolean) || [], [movie.crew]);
-  const producers = useMemo(() => movie.crew?.filter(c => c.role.toLowerCase() === "producer").map(c => c.crewMember?.name).filter(Boolean) || [], [movie.crew]);
-  const writers = useMemo(() => movie.crew?.filter(c => c.role.toLowerCase() === "writer").map(c => c.crewMember?.name).filter(Boolean) || [], [movie.crew]);
-  const cast = useMemo(() => movie.crew?.filter(c => c.role.toLowerCase() === "cast").map(c => c.crewMember?.name).filter(Boolean) || [], [movie.crew]);
+  const directors = useMemo(
+    () =>
+      movie.crew
+        ?.filter((c) => c.role.toLowerCase() === "director")
+        .map((c) => c.crewMember)
+        .filter((x): x is NonNullable<typeof x> => !!x) || [],
+    [movie.crew],
+  );
+  const producers = useMemo(
+    () =>
+      movie.crew
+        ?.filter((c) => c.role.toLowerCase() === "producer")
+        .map((c) => c.crewMember)
+        .filter((x): x is NonNullable<typeof x> => !!x) || [],
+    [movie.crew],
+  );
+  const writers = useMemo(
+    () =>
+      movie.crew
+        ?.filter((c) => c.role.toLowerCase() === "writer")
+        .map((c) => c.crewMember)
+        .filter((x): x is NonNullable<typeof x> => !!x) || [],
+    [movie.crew],
+  );
+  const cast = useMemo(
+    () =>
+      movie.crew
+        ?.filter((c) => c.role.toLowerCase() === "cast")
+        .map((c) => c.crewMember)
+        .filter((x): x is NonNullable<typeof x> => !!x) || [],
+    [movie.crew],
+  );
 
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,13 +161,20 @@ export default function MovieDetailsModal({
 
                 <button
                   onClick={() => onToggleFavorite(movie.id)}
-                  className={`flex items-center justify-center w-10 h-10 rounded-full border transition-all cursor-pointer ${isFavorite
-                    ? "bg-zinc-800 border-zinc-400 text-emerald-400 hover:border-white"
-                    : "bg-[#181818]/60 border-zinc-500 text-white hover:border-white hover:bg-zinc-800"
-                    }`}
-                  title={isFavorite ? "ลบจากรายการของฉัน" : "เพิ่มในรายการของฉัน"}
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border transition-all cursor-pointer ${
+                    isFavorite
+                      ? "bg-zinc-800 border-zinc-400 text-emerald-400 hover:border-white"
+                      : "bg-[#181818]/60 border-zinc-500 text-white hover:border-white hover:bg-zinc-800"
+                  }`}
+                  title={
+                    isFavorite ? "ลบจากรายการของฉัน" : "เพิ่มในรายการของฉัน"
+                  }
                 >
-                  {isFavorite ? <CheckIcon className="text-lg" /> : <AddIcon className="text-lg" />}
+                  {isFavorite ? (
+                    <CheckIcon className="text-lg" />
+                  ) : (
+                    <AddIcon className="text-lg" />
+                  )}
                 </button>
               </div>
             </div>
@@ -170,86 +206,16 @@ export default function MovieDetailsModal({
               {movie.description}
             </p>
 
-            {(directors.length > 0 || producers.length > 0 || writers.length > 0 || cast.length > 0) && (
-              <div className="space-y-4 pt-6 border-t border-zinc-800/60">
-                <h4 className="text-base font-bold text-white tracking-wide uppercase">
-                  ทีมงานและนักแสดง (Cast & Crew)
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/80">
-                  {directors.length > 0 && (
-                    <div className="space-y-0.5">
-                      <span className="text-zinc-500 text-[10px] uppercase tracking-wider block font-semibold">ผู้กำกับ / Director</span>
-                      <span className="text-zinc-200 font-semibold">{directors.join(", ")}</span>
-                    </div>
-                  )}
-                  {producers.length > 0 && (
-                    <div className="space-y-0.5">
-                      <span className="text-zinc-500 text-[10px] uppercase tracking-wider block font-semibold">ผู้อำนวยการสร้าง / Producer</span>
-                      <span className="text-zinc-200 font-semibold">{producers.join(", ")}</span>
-                    </div>
-                  )}
-                  {writers.length > 0 && (
-                    <div className="space-y-0.5">
-                      <span className="text-zinc-500 text-[10px] uppercase tracking-wider block font-semibold">ผู้เขียนบท / Writer</span>
-                      <span className="text-zinc-200 font-semibold">{writers.join(", ")}</span>
-                    </div>
-                  )}
-                  {cast.length > 0 && (
-                    <div className="space-y-0.5 sm:col-span-2">
-                      <span className="text-zinc-500 text-[10px] uppercase tracking-wider block font-semibold">นักแสดง / Cast</span>
-                      <span className="text-zinc-200 font-semibold">
-                        {cast.join(", ")}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {movie.bts && ((movie.bts.btsVideo && movie.bts.btsVideo.length > 0) || (movie.bts.btsPhotos && movie.bts.btsPhotos.length > 0)) && (
-              <div className="space-y-4 pt-6 border-t border-zinc-800/60">
-                <h4 className="text-base font-bold text-white tracking-wide uppercase">
-                  เบื้องหลังการถ่ายทำ (Behind the Scenes)
-                </h4>
-                <div className="space-y-4">
-                  {movie.bts.btsVideo && movie.bts.btsVideo.map((videoUrl, index) => (
-                    <div key={`bts-video-${index}`} className="relative aspect-video rounded-xl overflow-hidden border border-zinc-800/80 bg-zinc-950">
-                      <iframe
-                        src={videoUrl.replace("watch?v=", "embed/")}
-                        title={`Behind The Scenes Video ${index + 1}`}
-                        className="w-full h-full absolute inset-0 border-0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    </div>
-                  ))}
-                  {movie.bts.btsPhotos && movie.bts.btsPhotos.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {movie.bts.btsPhotos.map((photo, index) => (
-                        <div key={`bts-photo-${index}`} className="relative aspect-video rounded-xl overflow-hidden border border-zinc-800/80 group/bts shadow-lg bg-zinc-950">
-                          <img
-                            src={photo}
-                            alt={`Behind the Scenes Photo ${index + 1}`}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover/bts:scale-108"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="h-[1px] bg-zinc-800 w-full" />
-
-            <div className="space-y-4">
+            <div className="space-y-4 pt-6 border-t border-zinc-800/60">
               <h4 className="text-lg font-bold text-white tracking-wide">
                 รีวิวจากผู้ชม ({movie.ratings.length})
               </h4>
 
               <div className="space-y-3.5 max-h-64 overflow-y-auto pr-2 no-scrollbar">
                 {movie.ratings.length === 0 ? (
-                  <p className="text-zinc-500 text-sm italic">ยังไม่มีรีวิวจากผู้ชม</p>
+                  <p className="text-zinc-500 text-sm italic">
+                    ยังไม่มีรีวิวจากผู้ชม
+                  </p>
                 ) : (
                   movie.ratings.map((rating, idx) => (
                     <div
@@ -261,11 +227,12 @@ export default function MovieDetailsModal({
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <span className="text-sm font-semibold text-zinc-200 truncate flex items-center gap-1.5">
                             {rating.user.name}
-                            {currentUser && rating.userId === currentUser.id && (
-                              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                                คุณ
-                              </span>
-                            )}
+                            {currentUser &&
+                              rating.userId === currentUser.id && (
+                                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                                  คุณ
+                                </span>
+                              )}
                           </span>
                           <div className="flex items-center gap-0.5 text-amber-500 text-xs">
                             {Array.from({ length: 5 }).map((_, i) => (
@@ -288,6 +255,205 @@ export default function MovieDetailsModal({
                 )}
               </div>
             </div>
+
+            {(directors.length > 0 ||
+              producers.length > 0 ||
+              writers.length > 0 ||
+              cast.length > 0) && (
+              <div className="space-y-6 pt-6 border-t border-zinc-800/60">
+                <h4 className="text-base font-bold text-white tracking-wide uppercase">
+                  ทีมงานและนักแสดง (Cast & Crew)
+                </h4>
+                <div className="space-y-5">
+                  {directors.length > 0 && (
+                    <div className="space-y-2.5">
+                      <span className="text-zinc-400 text-xs uppercase tracking-wider block font-semibold border-l-2 border-brand pl-2">
+                        ผู้กำกับ / Directors ({directors.length})
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {directors.map((d) => (
+                          <div
+                            key={d.id}
+                            className="flex items-center gap-3 bg-zinc-900/40 hover:bg-zinc-850/60 border border-zinc-800/85 p-2.5 rounded-xl transition-all duration-300 group"
+                          >
+                            {d.photoUrl ? (
+                              <img
+                                src={d.photoUrl}
+                                alt={d.name}
+                                className="w-12 h-12 rounded-full object-cover border border-zinc-700/80 group-hover:border-brand/60 flex-shrink-0 transition-colors shadow-inner"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-zinc-800/50 flex items-center justify-center border border-zinc-700/80 group-hover:border-brand/60 flex-shrink-0 transition-colors">
+                                <AccountCircleIcon className="text-[32px] text-zinc-550" />
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-zinc-100 text-[12px] sm:text-[13px] truncate group-hover:text-white transition-colors">
+                                {d.name}
+                              </p>
+                              <p className="text-[10px] text-zinc-550 font-medium truncate mt-0.5">
+                                ผู้กำกับ / Director
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {producers.length > 0 && (
+                    <div className="space-y-2.5">
+                      <span className="text-zinc-400 text-xs uppercase tracking-wider block font-semibold border-l-2 border-brand pl-2">
+                        ผู้อำนวยการสร้าง / Producers ({producers.length})
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {producers.map((p) => (
+                          <div
+                            key={p.id}
+                            className="flex items-center gap-3 bg-zinc-900/40 hover:bg-zinc-850/60 border border-zinc-800/85 p-2.5 rounded-xl transition-all duration-300 group"
+                          >
+                            {p.photoUrl ? (
+                              <img
+                                src={p.photoUrl}
+                                alt={p.name}
+                                className="w-12 h-12 rounded-full object-cover border border-zinc-700/80 group-hover:border-brand/60 flex-shrink-0 transition-colors shadow-inner"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-zinc-800/50 flex items-center justify-center border border-zinc-700/80 group-hover:border-brand/60 flex-shrink-0 transition-colors">
+                                <AccountCircleIcon className="text-[32px] text-zinc-550" />
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-zinc-100 text-[12px] sm:text-[13px] truncate group-hover:text-white transition-colors">
+                                {p.name}
+                              </p>
+                              <p className="text-[10px] text-zinc-550 font-medium truncate mt-0.5">
+                                ผู้อำนวยการสร้าง / Producer
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {writers.length > 0 && (
+                    <div className="space-y-2.5">
+                      <span className="text-zinc-400 text-xs uppercase tracking-wider block font-semibold border-l-2 border-brand pl-2">
+                        ผู้เขียนบท / Writers ({writers.length})
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {writers.map((w) => (
+                          <div
+                            key={w.id}
+                            className="flex items-center gap-3 bg-zinc-900/40 hover:bg-zinc-850/60 border border-zinc-800/85 p-2.5 rounded-xl transition-all duration-300 group"
+                          >
+                            {w.photoUrl ? (
+                              <img
+                                src={w.photoUrl}
+                                alt={w.name}
+                                className="w-12 h-12 rounded-full object-cover border border-zinc-700/80 group-hover:border-brand/60 flex-shrink-0 transition-colors shadow-inner"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-zinc-800/50 flex items-center justify-center border border-zinc-700/80 group-hover:border-brand/60 flex-shrink-0 transition-colors">
+                                <AccountCircleIcon className="text-[32px] text-zinc-550" />
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-zinc-100 text-[12px] sm:text-[13px] truncate group-hover:text-white transition-colors">
+                                {w.name}
+                              </p>
+                              <p className="text-[10px] text-zinc-550 font-medium truncate mt-0.5">
+                                ผู้เขียนบท / Writer
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {cast.length > 0 && (
+                    <div className="space-y-2.5">
+                      <span className="text-zinc-400 text-xs uppercase tracking-wider block font-semibold border-l-2 border-brand pl-2">
+                        นักแสดง / Cast ({cast.length})
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {cast.map((c) => (
+                          <div
+                            key={c.id}
+                            className="flex items-center gap-3 bg-zinc-900/40 hover:bg-zinc-850/60 border border-zinc-800/85 p-2.5 rounded-xl transition-all duration-300 group"
+                          >
+                            {c.photoUrl ? (
+                              <img
+                                src={c.photoUrl}
+                                alt={c.name}
+                                className="w-12 h-12 rounded-full object-cover border border-zinc-700/80 group-hover:border-brand/60 flex-shrink-0 transition-colors shadow-inner"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-zinc-800/50 flex items-center justify-center border border-zinc-700/80 group-hover:border-brand/60 flex-shrink-0 transition-colors">
+                                <AccountCircleIcon className="text-[32px] text-zinc-550" />
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-zinc-100 text-[12px] sm:text-[13px] truncate group-hover:text-white transition-colors">
+                                {c.name}
+                              </p>
+                              <p className="text-[10px] text-zinc-550 font-medium truncate mt-0.5">
+                                นักแสดง / Actor
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {movie.bts &&
+              ((movie.bts.btsVideo && movie.bts.btsVideo.length > 0) ||
+                (movie.bts.btsPhotos && movie.bts.btsPhotos.length > 0)) && (
+                <div className="space-y-4 pt-6 border-t border-zinc-800/60">
+                  <h4 className="text-base font-bold text-white tracking-wide uppercase">
+                    เบื้องหลังการถ่ายทำ (Behind the Scenes)
+                  </h4>
+                  <div className="space-y-4">
+                    {movie.bts.btsVideo &&
+                      movie.bts.btsVideo.map((videoUrl, index) => (
+                        <div
+                          key={`bts-video-${index}`}
+                          className="relative aspect-video rounded-xl overflow-hidden border border-zinc-800/80 bg-zinc-950"
+                        >
+                          <iframe
+                            src={videoUrl.replace("watch?v=", "embed/")}
+                            title={`Behind The Scenes Video ${index + 1}`}
+                            className="w-full h-full absolute inset-0 border-0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </div>
+                      ))}
+                    {movie.bts.btsPhotos && movie.bts.btsPhotos.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {movie.bts.btsPhotos.map((photo, index) => (
+                          <div
+                            key={`bts-photo-${index}`}
+                            className="relative aspect-video rounded-xl overflow-hidden border border-zinc-800/80 group/bts shadow-lg bg-zinc-950"
+                          >
+                            <img
+                              src={photo}
+                              alt={`Behind the Scenes Photo ${index + 1}`}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover/bts:scale-108"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
           </div>
 
           <div className="space-y-6">
@@ -362,14 +528,18 @@ export default function MovieDetailsModal({
               ) : currentUser ? (
                 <form onSubmit={handleSubmitReview} className="space-y-4">
                   <div className="p-3 bg-zinc-900/60 rounded-lg border border-zinc-800 flex items-center justify-between gap-2">
-                    <span className="text-xs text-zinc-400 font-medium">รีวิวจากผู้ใช้:</span>
+                    <span className="text-xs text-zinc-400 font-medium">
+                      รีวิวจากผู้ใช้:
+                    </span>
                     <span className="text-xs font-bold text-white truncate max-w-[120px] bg-brand/10 px-2 py-0.5 rounded border border-brand/20">
                       {currentUser.name || currentUser.email}
                     </span>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs text-zinc-400 font-medium block">คะแนน</label>
+                    <label className="text-xs text-zinc-400 font-medium block">
+                      คะแนน
+                    </label>
                     <div className="flex items-center justify-between px-1">
                       {Array.from({ length: 5 }).map((_, i) => {
                         const scoreValue = i + 1;
@@ -391,10 +561,7 @@ export default function MovieDetailsModal({
                     </div>
                   </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                  >
+                  <Button type="submit" className="w-full">
                     ส่งคะแนน
                   </Button>
                 </form>

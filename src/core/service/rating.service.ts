@@ -55,7 +55,8 @@ export class RatingService {
 
   async getRatingByMovieAndUser(data: RatingCheckInput): Promise<Rating[]> {
     try {
-      const response = await this.ratingRepository.getRatingByMovieAndUser(data);
+      const response =
+        await this.ratingRepository.getRatingByMovieAndUser(data);
       if (response.error) {
         throw new Error(response.error);
       }

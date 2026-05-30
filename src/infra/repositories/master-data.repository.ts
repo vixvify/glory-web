@@ -10,7 +10,9 @@ export class MasterDataRepositoryImpl implements MasterDataRepository {
   }
 
   async getUniversities(): Promise<ApiResponse<University[]>> {
-    const response = await httpClient.get<University[]>("/masterdata/universities");
+    const response = await httpClient.get<University[]>(
+      "/masterdata/universities",
+    );
     return response;
   }
 

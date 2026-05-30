@@ -46,7 +46,9 @@ export default function MovieHero({ movies, onPlayClick, onInfoClick }: Props) {
 
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setActiveIndex((prev) => (prev - 1 + heroMovies.length) % heroMovies.length);
+    setActiveIndex(
+      (prev) => (prev - 1 + heroMovies.length) % heroMovies.length,
+    );
   };
 
   const handleNext = (e: React.MouseEvent) => {
@@ -100,7 +102,10 @@ export default function MovieHero({ movies, onPlayClick, onInfoClick }: Props) {
       </div>
 
       <div className="max-w-4xl relative z-10 space-y-4 md:space-y-6 pt-16 md:pt-20 transition-all duration-500 transform translate-y-0">
-        <div className="flex items-center gap-2 animate-fade-in" key={`badge-${currentMovie.id}`}>
+        <div
+          className="flex items-center gap-2 animate-fade-in"
+          key={`badge-${currentMovie.id}`}
+        >
           <span className="bg-brand text-white text-[10px] md:text-xs font-black px-1.5 py-0.5 rounded tracking-widest leading-none shadow-md">
             ภาพยนตร์
           </span>
@@ -120,7 +125,9 @@ export default function MovieHero({ movies, onPlayClick, onInfoClick }: Props) {
           className="flex items-center gap-3 text-xs md:text-sm animate-fade-in"
           key={`meta-${currentMovie.id}`}
         >
-          <span className="text-emerald-400 font-bold">{currentMovie.matchRate}% ตรงกับคุณ</span>
+          <span className="text-emerald-400 font-bold">
+            {currentMovie.matchRate}% ตรงกับคุณ
+          </span>
           <span className="text-zinc-300">{currentMovie.year}</span>
           <span className="px-1.5 py-0.5 text-[10px] md:text-xs font-bold border border-zinc-500 text-zinc-300 rounded leading-none">
             {currentMovie.ageRating}
@@ -164,8 +171,11 @@ export default function MovieHero({ movies, onPlayClick, onInfoClick }: Props) {
           <button
             key={index}
             onClick={() => setActiveIndex(index)}
-            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 cursor-pointer ${index === activeIndex ? "bg-brand scale-125 w-6" : "bg-zinc-600/80 hover:bg-zinc-400"
-              }`}
+            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
+              index === activeIndex
+                ? "bg-brand scale-125 w-6"
+                : "bg-zinc-600/80 hover:bg-zinc-400"
+            }`}
           />
         ))}
       </div>

@@ -1,4 +1,8 @@
-import { CrewMember } from "../domain/movie";
+import {
+  CrewMember,
+  CreateCrewMember,
+  UpdateCrewMember,
+} from "../domain/movie";
 import { CrewMemberRepository } from "../ports/crew-member.repository";
 
 export class CrewMemberService {
@@ -43,9 +47,15 @@ export class CrewMemberService {
     }
   }
 
-  async createCrewMember(name: string): Promise<CrewMember> {
+  async createCrewMember(crewMember: CreateCrewMember): Promise<CrewMember> {
     try {
-      const response = await this.crewMemberRepository.createCrewMember(name);
+      const formData = new FormData();
+      formData.append("name", crewMember.name);
+      if (crewMember.photo) {
+        formData.append("photo", crewMember.photo);
+      }
+      const response =
+        await this.crewMemberRepository.createCrewMember(formData);
       if (response.error) {
         throw new Error(response.error);
       }
@@ -56,11 +66,21 @@ export class CrewMemberService {
     }
   }
 
-  async updateCrewMember(id: string, name: string): Promise<CrewMember> {
+  async updateCrewMember(
+    id: string,
+    crewMember: UpdateCrewMember,
+  ): Promise<CrewMember> {
     try {
+      const formData = new FormData();
+      formData.append("name", crewMember.name);
+      if (crewMember.photo instanceof File) {
+        formData.append("photo", crewMember.photo);
+      } else if (typeof crewMember.photo === "string") {
+        formData.append("photo", crewMember.photo);
+      }
       const response = await this.crewMemberRepository.updateCrewMember(
         id,
-        name,
+        formData,
       );
       if (response.error) {
         throw new Error(response.error);

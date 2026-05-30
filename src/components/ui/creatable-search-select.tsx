@@ -7,6 +7,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 interface SelectOption {
   id: string;
   name: string;
+  photoUrl?: string | null;
 }
 
 interface CreatableSearchSelectProps {
@@ -86,7 +87,20 @@ export function CreatableSearchSelect({
           className="w-full bg-black/40 border border-zinc-800 focus:border-brand rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none transition-all duration-300 placeholder-zinc-550"
         />
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-brand transition-colors">
-          <AccountCircleIcon className="text-sm" />
+          {(() => {
+            const matchedOpt = options.find((o) => o.id === value.id);
+            const pUrl = matchedOpt?.photoUrl || value.photoUrl;
+            if (pUrl) {
+              return (
+                <img
+                  src={pUrl}
+                  alt={value.name}
+                  className="w-5 h-5 rounded-full object-cover border border-zinc-700"
+                />
+              );
+            }
+            return <AccountCircleIcon className="text-sm" />;
+          })()}
         </div>
       </div>
 
@@ -101,7 +115,20 @@ export function CreatableSearchSelect({
                   onClick={() => handleSelectOption(opt)}
                   className="w-full text-left px-3.5 py-2.5 text-xs rounded-lg hover:bg-zinc-850 hover:text-white text-zinc-300 font-medium transition-all duration-200 flex items-center justify-between cursor-pointer"
                 >
-                  <span className="truncate">{opt.name}</span>
+                  <div className="flex items-center gap-2 truncate">
+                    {opt.photoUrl ? (
+                      <img
+                        src={opt.photoUrl}
+                        alt={opt.name}
+                        className="w-6 h-6 rounded-full object-cover border border-zinc-800 flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-brand/10 border border-brand/20 flex items-center justify-center text-brand flex-shrink-0">
+                        <AccountCircleIcon className="text-[14px]" />
+                      </div>
+                    )}
+                    <span className="truncate">{opt.name}</span>
+                  </div>
                   <span className="text-[9px] bg-brand/10 border border-brand/20 text-brand px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider scale-90">
                     ในระบบ
                   </span>

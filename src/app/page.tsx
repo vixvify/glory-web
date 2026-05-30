@@ -17,15 +17,24 @@ import { Toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { CATEGORY_TITLE_MAPPING } from "@/core/constants/categories";
 import { useMoviesQuery } from "@/hooks/use-movies";
-import { useFavoritesQuery, useToggleFavoriteMutation } from "@/hooks/use-favorites";
+import {
+  useFavoritesQuery,
+  useToggleFavoriteMutation,
+} from "@/hooks/use-favorites";
 import {
   useMovieUserRatingQuery,
   useAddRatingMutation,
   useUpdateRatingMutation,
   useDeleteRatingMutation,
 } from "@/hooks/use-ratings";
-import { useCategoriesQuery, useUniversitiesQuery } from "@/hooks/use-master-data";
+import {
+  useCategoriesQuery,
+  useUniversitiesQuery,
+} from "@/hooks/use-master-data";
+import { useCrewMembersQuery } from "@/hooks/use-crew-members";
 import { useLogoutMutation } from "@/hooks/use-auth";
+import CrewRow from "@/components/movie/crew-row";
+import { CrewMember } from "@/core/domain/movie";
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,6 +52,7 @@ export default function HomePage() {
   const { data: allMovies = [], isLoading: isMoviesLoading } = useMoviesQuery();
   const { data: categories = [] } = useCategoriesQuery();
   const { data: universities = [] } = useUniversitiesQuery();
+  const { data: crewMembers = [] } = useCrewMembersQuery();
   const { data: serverFavorites } = useFavoritesQuery(!!currentUser);
 
   const [localFavorites, setLocalFavorites] = useState<Movie[] | null>(null);
@@ -65,7 +75,7 @@ export default function HomePage() {
   const { data: userRatings = [] } = useMovieUserRatingQuery(
     selectedMovie?.id || "",
     currentUser?.id || "",
-    !!selectedMovie && !!currentUser
+    !!selectedMovie && !!currentUser,
   );
   const currentUserRating = userRatings.length > 0 ? userRatings[0] : null;
 
@@ -75,90 +85,105 @@ export default function HomePage() {
   const deleteRatingMutation = useDeleteRatingMutation();
   const logoutMutation = useLogoutMutation();
 
-  const handleLoginSuccess = useCallback((user: User) => {
-    setCurrentUser(user);
-  }, [setCurrentUser]);
+  const handleLoginSuccess = useCallback(
+    (user: User) => {
+      setCurrentUser(user);
+    },
+    [setCurrentUser],
+  );
 
   const handleSignOut = useCallback(() => {
     logoutMutation.mutate();
   }, [logoutMutation]);
 
-  const handleToggleFavorite = useCallback((movieId: string) => {
-    if (!currentUser) {
-      setIsAuthOpen(true);
-      return;
-    }
-    const isCurrentlyFavorite = favorites.some((m) => m.id === movieId);
-    const previousFavorites = [...favorites];
-
-    const targetMovie = allMovies.find((m) => m.id === movieId);
-    const updatedFavorites = isCurrentlyFavorite
-      ? favorites.filter((m) => m.id !== movieId)
-      : targetMovie
-        ? [...favorites, targetMovie]
-        : favorites;
-
-    setLocalFavorites(updatedFavorites);
-
-    toggleFavoriteMutation.mutate(
-      { movieId, isFavorite: isCurrentlyFavorite },
-      {
-        onSuccess: () => {
-          if (isCurrentlyFavorite) {
-            showToast("นำออกจากรายการโปรดแล้ว", "info");
-          } else {
-            showToast("เพิ่มลงในรายการโปรดแล้ว", "success");
-          }
-        },
-        onError: () => {
-          setLocalFavorites(previousFavorites);
-          showToast("เกิดข้อผิดพลาดในการปรับปรุงรายการโปรด", "error");
-        },
+  const handleToggleFavorite = useCallback(
+    (movieId: string) => {
+      if (!currentUser) {
+        setIsAuthOpen(true);
+        return;
       }
-    );
-  }, [currentUser, favorites, allMovies, toggleFavoriteMutation, showToast]);
+      const isCurrentlyFavorite = favorites.some((m) => m.id === movieId);
+      const previousFavorites = [...favorites];
 
-  const handleAddRating = useCallback((movieId: string, user: User, stars: number) => {
-    addRatingMutation.mutate(
-      { userId: user.id, movieId, stars },
-      {
-        onSuccess: () => {
-          showToast("เพิ่มคะแนนแล้ว", "success");
-        },
-        onError: () => {
-          showToast("เกิดข้อผิดพลาด", "error");
-        },
-      }
-    );
-  }, [addRatingMutation, showToast]);
+      const targetMovie = allMovies.find((m) => m.id === movieId);
+      const updatedFavorites = isCurrentlyFavorite
+        ? favorites.filter((m) => m.id !== movieId)
+        : targetMovie
+          ? [...favorites, targetMovie]
+          : favorites;
 
-  const handleUpdateRating = useCallback((movieId: string, user: User, stars: number) => {
-    updateRatingMutation.mutate(
-      { userId: user.id, movieId, stars },
-      {
-        onSuccess: () => {
-          showToast("แก้ไขคะแนนแล้ว", "success");
-        },
-        onError: () => {
-          showToast("เกิดข้อผิดพลาด", "error");
-        },
-      }
-    );
-  }, [updateRatingMutation, showToast]);
+      setLocalFavorites(updatedFavorites);
 
-  const handleDeleteRating = useCallback((movieId: string, user: User) => {
-    deleteRatingMutation.mutate(
-      { userId: user.id, movieId },
-      {
-        onSuccess: () => {
-          showToast("ลบคะแนนแล้ว", "success");
+      toggleFavoriteMutation.mutate(
+        { movieId, isFavorite: isCurrentlyFavorite },
+        {
+          onSuccess: () => {
+            if (isCurrentlyFavorite) {
+              showToast("นำออกจากรายการโปรดแล้ว", "info");
+            } else {
+              showToast("เพิ่มลงในรายการโปรดแล้ว", "success");
+            }
+          },
+          onError: () => {
+            setLocalFavorites(previousFavorites);
+            showToast("เกิดข้อผิดพลาดในการปรับปรุงรายการโปรด", "error");
+          },
         },
-        onError: () => {
-          showToast("เกิดข้อผิดพลาด", "error");
+      );
+    },
+    [currentUser, favorites, allMovies, toggleFavoriteMutation, showToast],
+  );
+
+  const handleAddRating = useCallback(
+    (movieId: string, user: User, stars: number) => {
+      addRatingMutation.mutate(
+        { userId: user.id, movieId, stars },
+        {
+          onSuccess: () => {
+            showToast("เพิ่มคะแนนแล้ว", "success");
+          },
+          onError: () => {
+            showToast("เกิดข้อผิดพลาด", "error");
+          },
         },
-      }
-    );
-  }, [deleteRatingMutation, showToast]);
+      );
+    },
+    [addRatingMutation, showToast],
+  );
+
+  const handleUpdateRating = useCallback(
+    (movieId: string, user: User, stars: number) => {
+      updateRatingMutation.mutate(
+        { userId: user.id, movieId, stars },
+        {
+          onSuccess: () => {
+            showToast("แก้ไขคะแนนแล้ว", "success");
+          },
+          onError: () => {
+            showToast("เกิดข้อผิดพลาด", "error");
+          },
+        },
+      );
+    },
+    [updateRatingMutation, showToast],
+  );
+
+  const handleDeleteRating = useCallback(
+    (movieId: string, user: User) => {
+      deleteRatingMutation.mutate(
+        { userId: user.id, movieId },
+        {
+          onSuccess: () => {
+            showToast("ลบคะแนนแล้ว", "success");
+          },
+          onError: () => {
+            showToast("เกิดข้อผิดพลาด", "error");
+          },
+        },
+      );
+    },
+    [deleteRatingMutation, showToast],
+  );
 
   const handlePlayTrailer = useCallback((movie: Movie) => {
     setTrailerMovie(movie);
@@ -185,14 +210,15 @@ export default function HomePage() {
         (m) =>
           m.title.toLowerCase().includes(q) ||
           m.category.toLowerCase().includes(q) ||
-          m.description.toLowerCase().includes(q)
+          m.description.toLowerCase().includes(q),
       );
     }
 
     return list;
   }, [allMovies, showMyListOnly, favorites, selectedCategory, searchQuery]);
 
-  const isBrowsingRowView = !searchQuery && !selectedCategory && !showMyListOnly;
+  const isBrowsingRowView =
+    !searchQuery && !selectedCategory && !showMyListOnly;
 
   const recommendedMovies = useMemo(() => {
     return [...allMovies].sort((a, b) => b.matchRate - a.matchRate).slice(0, 5);
@@ -226,6 +252,40 @@ export default function HomePage() {
       }
     }
     return map;
+  }, [allMovies]);
+
+  const directorsList = useMemo(() => {
+    const directorIds = new Set<string>();
+    const list: CrewMember[] = [];
+    for (const movie of allMovies) {
+      if (!movie.crew) continue;
+      for (const c of movie.crew) {
+        if (c.role.toLowerCase() === "director" && c.crewMember) {
+          if (!directorIds.has(c.crewMember.id)) {
+            directorIds.add(c.crewMember.id);
+            list.push(c.crewMember);
+          }
+        }
+      }
+    }
+    return list;
+  }, [allMovies]);
+
+  const actorsList = useMemo(() => {
+    const actorIds = new Set<string>();
+    const list: CrewMember[] = [];
+    for (const movie of allMovies) {
+      if (!movie.crew) continue;
+      for (const c of movie.crew) {
+        if (c.role.toLowerCase() === "cast" && c.crewMember) {
+          if (!actorIds.has(c.crewMember.id)) {
+            actorIds.add(c.crewMember.id);
+            list.push(c.crewMember);
+          }
+        }
+      }
+    }
+    return list;
   }, [allMovies]);
 
   if (isMoviesLoading) {
@@ -292,6 +352,26 @@ export default function HomePage() {
                 />
               );
             })}
+
+            {directorsList.length > 0 && (
+              <CrewRow
+                title="ผู้กำกับยอดนิยม"
+                crew={directorsList}
+                onCrewClick={(member) => {
+                  setSearchQuery(member.name);
+                }}
+              />
+            )}
+
+            {actorsList.length > 0 && (
+              <CrewRow
+                title="นักแสดงและทีมงาน"
+                crew={actorsList}
+                onCrewClick={(member) => {
+                  setSearchQuery(member.name);
+                }}
+              />
+            )}
 
             {categories.map((category) => {
               const categoryMovies = moviesByCategory[category.name] || [];
@@ -361,7 +441,9 @@ export default function HomePage() {
           isOpen={!!selectedMovie}
           onClose={() => setSelectedMovie(null)}
           movie={activeMovieForModal}
-          isFavorite={favorites.some((fav) => fav.id === activeMovieForModal.id)}
+          isFavorite={favorites.some(
+            (fav) => fav.id === activeMovieForModal.id,
+          )}
           onToggleFavorite={handleToggleFavorite}
           onPlayTrailer={() => handlePlayTrailer(activeMovieForModal)}
           onAddRating={handleAddRating}

@@ -21,6 +21,7 @@ export interface AgeRating {
 export interface CrewMember {
   id: string;
   name: string;
+  photoUrl?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -100,4 +101,14 @@ export interface UpdateMovie {
   cast?: string | string[] | null;
   btsVideo?: string | string[] | null;
   btsPhotos?: FileList | File[] | string | string[] | null;
+}
+
+export interface CreateCrewMember {
+  name: string;
+  photo?: File | null;
+}
+
+export interface UpdateCrewMember {
+  name: string;
+  photo?: File | string | null;
 }

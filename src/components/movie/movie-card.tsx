@@ -26,7 +26,8 @@ function MovieCard({
   onToggleFavorite,
 }: Props) {
   const totalScore = movie.ratings.reduce((sum, r) => sum + r.stars, 0);
-  const averageRating = movie.ratings.length > 0 ? totalScore / movie.ratings.length : 0;
+  const averageRating =
+    movie.ratings.length > 0 ? totalScore / movie.ratings.length : 0;
   const { currentUser } = useAppStore();
 
   const handleClick = () => {
@@ -73,7 +74,9 @@ function MovieCard({
             <h3 className="font-bold text-sm md:text-base text-white tracking-wide leading-tight group-hover:text-red-500 transition-colors duration-300 line-clamp-1">
               {movie.title}
             </h3>
-            <span className="text-[10px] text-zinc-400 shrink-0 font-medium">{movie.year}</span>
+            <span className="text-[10px] text-zinc-400 shrink-0 font-medium">
+              {movie.year}
+            </span>
           </div>
 
           <p className="text-xs text-zinc-400 font-light line-clamp-2 leading-relaxed">
@@ -105,16 +108,23 @@ function MovieCard({
             >
               <PlayArrowIcon className="text-base" />
             </button>
-            {currentUser && <button
-              onClick={handleToggle}
-              className={`p-1 rounded-full border transition-all cursor-pointer ${isFavorite
-                ? "bg-zinc-800 border-zinc-500 text-green-400 hover:border-white"
-                : "bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+            {currentUser && (
+              <button
+                onClick={handleToggle}
+                className={`p-1 rounded-full border transition-all cursor-pointer ${
+                  isFavorite
+                    ? "bg-zinc-800 border-zinc-500 text-green-400 hover:border-white"
+                    : "bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
                 }`}
-              title={isFavorite ? "ลบจากรายการของฉัน" : "เพิ่มในรายการของฉัน"}
-            >
-              {isFavorite ? <CheckIcon className="text-base" /> : <AddIcon className="text-base" />}
-            </button>}
+                title={isFavorite ? "ลบจากรายการของฉัน" : "เพิ่มในรายการของฉัน"}
+              >
+                {isFavorite ? (
+                  <CheckIcon className="text-base" />
+                ) : (
+                  <AddIcon className="text-base" />
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -123,4 +133,3 @@ function MovieCard({
 }
 
 export default memo(MovieCard);
-

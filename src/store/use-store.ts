@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import { User } from "@/core/domain/user";
 import { authService } from "@/infra/container";
 
@@ -22,53 +21,46 @@ interface AppState {
   hideToast: () => void;
 }
 
-export const useAppStore = create<AppState>()(
-  persist(
-    (set, get) => ({
-      currentUser: null,
-      toast: null,
+export const useAppStore = create<AppState>()((set, get) => ({
+  currentUser: null,
+  toast: null,
 
-      setCurrentUser: (user) => set({ currentUser: user }),
+  setCurrentUser: (user) => set({ currentUser: user }),
 
-      checkAuth: async () => {
-        try {
-          const user = await authService.getCurrentUser();
-          set({ currentUser: user });
-        } catch (error) {
-          console.error("Auth check failed, removing stale user session:", error);
-          set({ currentUser: null });
-        }
-      },
-
-      showToast: (message, type = "success") => {
-        set({
-          toast: {
-            message,
-            type,
-            isVisible: true,
-          },
-        });
-
-        setTimeout(() => {
-          get().hideToast();
-        }, 4000);
-      },
-
-      hideToast: () => {
-        const currentToast = get().toast;
-
-        if (currentToast) {
-          set({
-            toast: {
-              ...currentToast,
-              isVisible: false,
-            },
-          });
-        }
-      },
-    }),
-    {
-      name: "app-storage",
+  checkAuth: async () => {
+    try {
+      const user = await authService.getCurrentUser();
+      set({ currentUser: user });
+    } catch (error) {
+      console.error("Auth check failed, removing stale user session:", error);
+      set({ currentUser: null });
     }
-  )
-);
+  },
+
+  showToast: (message, type = "success") => {
+    set({
+      toast: {
+        message,
+        type,
+        isVisible: true,
+      },
+    });
+
+    setTimeout(() => {
+      get().hideToast();
+    }, 4000);
+  },
+
+  hideToast: () => {
+    const currentToast = get().toast;
+
+    if (currentToast) {
+      set({
+        toast: {
+          ...currentToast,
+          isVisible: false,
+        },
+      });
+    }
+  },
+}));
