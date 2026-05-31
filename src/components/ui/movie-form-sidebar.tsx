@@ -483,15 +483,17 @@ export const MovieFormSidebar: React.FC<MovieFormSidebarProps> = ({
                         }}
                       />
                       {directors.length > 1 && (
-                        <button
+                        <Button
                           type="button"
+                          variant="secondary"
+                          size="sm"
                           onClick={() =>
                             setDirectors(directors.filter((_, i) => i !== idx))
                           }
-                          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer flex-shrink-0"
+                          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all flex-shrink-0 h-auto"
                         >
                           <CloseIcon className="text-sm" />
-                        </button>
+                        </Button>
                       )}
                     </div>
                   ))}
@@ -526,15 +528,17 @@ export const MovieFormSidebar: React.FC<MovieFormSidebarProps> = ({
                         }}
                       />
                       {producers.length > 1 && (
-                        <button
+                        <Button
                           type="button"
+                          variant="secondary"
+                          size="sm"
                           onClick={() =>
                             setProducers(producers.filter((_, i) => i !== idx))
                           }
-                          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer flex-shrink-0"
+                          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all flex-shrink-0 h-auto"
                         >
                           <CloseIcon className="text-sm" />
-                        </button>
+                        </Button>
                       )}
                     </div>
                   ))}
@@ -569,15 +573,17 @@ export const MovieFormSidebar: React.FC<MovieFormSidebarProps> = ({
                         }}
                       />
                       {writers.length > 1 && (
-                        <button
+                        <Button
                           type="button"
+                          variant="secondary"
+                          size="sm"
                           onClick={() =>
                             setWriters(writers.filter((_, i) => i !== idx))
                           }
-                          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer flex-shrink-0"
+                          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all flex-shrink-0 h-auto"
                         >
                           <CloseIcon className="text-sm" />
-                        </button>
+                        </Button>
                       )}
                     </div>
                   ))}
@@ -612,17 +618,19 @@ export const MovieFormSidebar: React.FC<MovieFormSidebarProps> = ({
                         }}
                       />
                       {castMembers.length > 1 && (
-                        <button
+                        <Button
                           type="button"
+                          variant="secondary"
+                          size="sm"
                           onClick={() =>
                             setCastMembers(
                               castMembers.filter((_, i) => i !== idx),
                             )
                           }
-                          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer flex-shrink-0"
+                          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all flex-shrink-0 h-auto"
                         >
                           <CloseIcon className="text-sm" />
-                        </button>
+                        </Button>
                       )}
                     </div>
                   ))}
@@ -646,7 +654,7 @@ export const MovieFormSidebar: React.FC<MovieFormSidebarProps> = ({
                 <div className="space-y-2">
                   {btsVideos.map((videoUrl, idx) => (
                     <div key={idx} className="flex gap-2 items-center">
-                      <input
+                      <Input
                         type="text"
                         placeholder={LOCALIZATION.MOVIE_FORM.BTS_VIDEO_PLACEHOLDER}
                         value={videoUrl}
@@ -655,18 +663,20 @@ export const MovieFormSidebar: React.FC<MovieFormSidebarProps> = ({
                           newVideos[idx] = e.target.value;
                           setBtsVideos(newVideos);
                         }}
-                        className="flex-1 bg-black/40 border border-zinc-800 focus:border-brand rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition-colors"
+                        className="flex-1 bg-black/40 border-zinc-800 focus:border-brand rounded-xl px-4 py-2.5"
                       />
                       {btsVideos.length > 1 && (
-                        <button
+                        <Button
                           type="button"
+                          variant="secondary"
+                          size="sm"
                           onClick={() => {
                             setBtsVideos(btsVideos.filter((_, i) => i !== idx));
                           }}
-                          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer"
+                          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all h-auto"
                         >
                           <CloseIcon className="text-sm" />
-                        </button>
+                        </Button>
                       )}
                     </div>
                   ))}

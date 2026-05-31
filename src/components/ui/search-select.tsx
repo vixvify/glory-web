@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import { Input } from "./input";
 
 interface SelectOption {
   id: string;
@@ -77,32 +78,28 @@ export function CreatableSearchSelect({
 
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
-      <div className="relative group">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={handleInputChange}
-          onFocus={handleFocus}
-          placeholder={placeholder}
-          className="w-full bg-black/40 border border-zinc-800 focus:border-brand rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none transition-all duration-300 placeholder-zinc-550"
-        />
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-brand transition-colors">
-          {(() => {
-            const matchedOpt = options.find((o) => o.id === value.id);
-            const pUrl = matchedOpt?.photoUrl || value.photoUrl;
-            if (pUrl) {
-              return (
-                <img
-                  src={pUrl}
-                  alt={value.name}
-                  className="w-5 h-5 rounded-full object-cover border border-zinc-700"
-                />
-              );
-            }
-            return <AccountCircleIcon className="text-sm" />;
-          })()}
-        </div>
-      </div>
+      <Input
+        type="text"
+        value={searchTerm}
+        onChange={handleInputChange}
+        onFocus={handleFocus}
+        placeholder={placeholder}
+        className="bg-black/40 border-zinc-800 focus:border-brand rounded-xl py-2.5"
+        icon={(() => {
+          const matchedOpt = options.find((o) => o.id === value.id);
+          const pUrl = matchedOpt?.photoUrl || value.photoUrl;
+          if (pUrl) {
+            return (
+              <img
+                src={pUrl}
+                alt={value.name}
+                className="w-5 h-5 rounded-full object-cover border border-zinc-700"
+              />
+            );
+          }
+          return <AccountCircleIcon className="text-sm" />;
+        })()}
+      />
 
       {isOpen && (
         <div className="absolute z-50 w-full mt-2 bg-zinc-950/95 border border-zinc-800/80 rounded-xl shadow-2xl max-h-60 overflow-y-auto no-scrollbar backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200">

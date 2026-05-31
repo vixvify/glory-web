@@ -10,16 +10,10 @@ import {
   CrewMember,
 } from "@/core/domain/movie";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import CategoryIcon from "@mui/icons-material/Category";
 import MovieIcon from "@mui/icons-material/Movie";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import StarIcon from "@mui/icons-material/Star";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import CloseIcon from "@mui/icons-material/Close";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import { useAppStore } from "@/store/use-store";
 import Loading from "../loading";
 import { Button } from "@/components/ui/button";
@@ -42,7 +36,6 @@ import {
 } from "@/hooks/use-crew-members";
 import { useLogoutMutation } from "@/hooks/use-auth";
 import PeopleIcon from "@mui/icons-material/People";
-import PersonIcon from "@mui/icons-material/Person";
 import { ConfirmModal } from "@/components/modal/confirm-modal";
 import { ImageCropper } from "@/components/modal/image-cropper";
 import { LOCALIZATION } from "@/core/constants/localization";
@@ -50,6 +43,9 @@ import { StatsCard } from "@/components/ui/stats-card";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterSelect } from "@/components/ui/filter-select";
 import { MovieFormSidebar } from "@/components/ui/movie-form-sidebar";
+import { MovieTable } from "@/components/ui/movie-table";
+import { CrewTable } from "@/components/ui/crew-table";
+import { CrewFormModal } from "@/components/modal/crew-form-modal";
 
 type ValidatedMoviePayload = {
   title: string;
@@ -411,7 +407,7 @@ export default function AdminPage() {
       <main className="flex-1 px-6 md:px-16 pt-28 max-w-7xl mx-auto w-full space-y-8 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs text-zinc-400">
+            <div className="flex items-center gap-2 text-xs text-zinc-405">
               <Link
                 href="/"
                 className="hover:text-brand transition-colors flex items-center gap-1"
@@ -526,113 +522,11 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-zinc-800/40 text-xs font-bold text-zinc-400 uppercase bg-zinc-950/20">
-                    <th className="py-4 px-6">{LOCALIZATION.ADMIN.TABLE_MOVIE}</th>
-                    <th className="py-4 px-6">{LOCALIZATION.ADMIN.TABLE_GENRE}</th>
-                    <th className="py-4 px-6">{LOCALIZATION.ADMIN.TABLE_RELEASE}</th>
-                    <th className="py-4 px-6">{LOCALIZATION.ADMIN.TABLE_DURATION}</th>
-                    <th className="py-4 px-6">{LOCALIZATION.ADMIN.TABLE_STATS}</th>
-                    <th className="py-4 px-6 text-right">{LOCALIZATION.ADMIN.TABLE_ACTIONS}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800/30 text-sm">
-                  {filteredMovies.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={6}
-                        className="py-16 text-center text-zinc-500 font-light"
-                      >
-                        {LOCALIZATION.ADMIN.NO_MOVIES}
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredMovies.map((movie) => (
-                      <tr
-                        key={movie.id}
-                        className="group/row hover:bg-zinc-900/10 transition-colors"
-                      >
-                        <td className="py-4 px-6 flex items-center gap-4">
-                          <div className="relative w-12 h-16 rounded-lg overflow-hidden border border-zinc-800/50 shadow-md flex-shrink-0">
-                            <img
-                              src={movie.thumbnail}
-                              alt={movie.title}
-                              className="w-full h-full object-cover group-hover/row:scale-105 transition-transform duration-300"
-                            />
-                          </div>
-                          <div className="space-y-0.5">
-                            <h4 className="font-bold text-white group-hover/row:text-brand transition-colors">
-                              {movie.title}
-                            </h4>
-                            <p className="text-xs text-zinc-400 max-w-[240px] truncate font-light">
-                              {movie.description}
-                            </p>
-                          </div>
-                        </td>
-
-                        <td className="py-4 px-6">
-                          <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-brand/10 text-brand border border-brand/20">
-                            {movie.category}
-                          </span>
-                        </td>
-
-                        <td className="py-4 px-6 space-y-1">
-                          <div className="flex items-center gap-1.5 text-xs text-zinc-300 font-semibold">
-                            <CalendarTodayIcon className="text-[10px] text-zinc-500" />
-                            {movie.year}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="px-1 py-0.5 text-[9px] font-bold border border-zinc-700 text-zinc-400 rounded leading-none">
-                              {movie.ageRating}
-                            </span>
-                            <span className="text-[10px] text-emerald-400 font-bold">
-                              {LOCALIZATION.ADMIN.MATCH_RATE(movie.matchRate)}
-                            </span>
-                          </div>
-                        </td>
-
-                        <td className="py-4 px-6 text-zinc-300 font-medium">
-                          <div className="flex items-center gap-1">
-                            <AccessTimeIcon className="text-xs text-zinc-500" />
-                            {movie.duration}
-                          </div>
-                        </td>
-
-                        <td className="py-4 px-6 space-y-1">
-                          <div className="text-xs text-zinc-300 flex items-center gap-1">
-                            <VisibilityIcon className="text-xs text-zinc-500" />
-                            {LOCALIZATION.ADMIN.VIEWS_COUNT(movie.views || 0)}
-                          </div>
-                          <div className="text-[10px] text-zinc-400 flex items-center gap-1">
-                            <StarIcon className="text-[10px] text-zinc-500" />
-                            {LOCALIZATION.ADMIN.REVIEWS_COUNT(movie.ratings?.length || 0)}
-                          </div>
-                        </td>
-
-                        <td className="py-4 px-6 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleOpenEdit(movie)}
-                              className="p-2 rounded-lg bg-zinc-800/80 hover:bg-brand/20 text-zinc-400 hover:text-brand border border-zinc-800 hover:border-brand/30 transition-all cursor-pointer"
-                            >
-                              <EditIcon className="text-sm" />
-                            </button>
-                            <button
-                              onClick={() => setDeleteMovieId(movie.id)}
-                              className="p-2 rounded-lg bg-zinc-800/80 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 border border-zinc-800 hover:border-red-500/30 transition-all cursor-pointer"
-                            >
-                              <DeleteIcon className="text-sm" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <MovieTable
+              movies={filteredMovies}
+              onEdit={handleOpenEdit}
+              onDelete={setDeleteMovieId}
+            />
           </div>
         ) : (
           <div className="bg-card border border-zinc-800/35 rounded-2xl shadow-xl overflow-hidden backdrop-blur-md animate-fade-in">
@@ -644,105 +538,12 @@ export default function AdminPage() {
               />
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-zinc-800/40 text-xs font-bold text-zinc-400 uppercase bg-zinc-950/20">
-                    <th className="py-4 px-6">{LOCALIZATION.ADMIN.TABLE_CREW_NAME}</th>
-                    <th className="py-4 px-6">{LOCALIZATION.ADMIN.TABLE_CREW_STATUS}</th>
-                    <th className="py-4 px-6">{LOCALIZATION.ADMIN.TABLE_CREW_DATE}</th>
-                    <th className="py-4 px-6 text-right">{LOCALIZATION.ADMIN.TABLE_ACTIONS}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800/30 text-sm">
-                  {filteredCrew.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="py-16 text-center text-zinc-500 font-light"
-                      >
-                        {LOCALIZATION.ADMIN.NO_CREW}
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredCrew.map((member) => {
-                      const movieCount = movies.filter((m) =>
-                        m.crew?.some((c) => c.crewMember?.id === member.id),
-                      ).length;
-
-                      return (
-                        <tr
-                          key={member.id}
-                          className="group/row hover:bg-zinc-900/10 transition-colors"
-                        >
-                          <td className="py-4 px-6 flex items-center gap-4">
-                            {member.photoUrl ? (
-                              <img
-                                src={member.photoUrl}
-                                alt={member.name}
-                                className="w-10 h-10 rounded-full object-cover border border-zinc-800 flex-shrink-0"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-brand/10 border border-brand/20 flex items-center justify-center text-brand flex-shrink-0">
-                                <PersonIcon className="text-lg" />
-                              </div>
-                            )}
-                            <div>
-                              <h4 className="font-bold text-white group-hover/row:text-brand transition-colors">
-                                {member.name}
-                              </h4>
-                              <p className="text-[10px] text-zinc-500 font-mono">
-                                ID: {member.id}
-                              </p>
-                            </div>
-                          </td>
-
-                          <td className="py-4 px-6">
-                            <span
-                              className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
-                                movieCount > 0
-                                  ? "bg-brand/10 text-brand border border-brand/20"
-                                  : "bg-zinc-800/60 text-zinc-400 border border-zinc-800"
-                              }`}
-                            >
-                              มีส่วนร่วมภาพยนตร์ {movieCount} เรื่อง
-                            </span>
-                          </td>
-
-                          <td className="py-4 px-6 text-zinc-400 font-light">
-                            {new Date(member.createdAt).toLocaleDateString(
-                              "th-TH",
-                              {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              },
-                            )}
-                          </td>
-
-                          <td className="py-4 px-6 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => handleOpenEditCrew(member)}
-                                className="p-2 rounded-lg bg-zinc-800/80 hover:bg-brand/20 text-zinc-400 hover:text-brand border border-zinc-800 hover:border-brand/30 transition-all cursor-pointer"
-                              >
-                                <EditIcon className="text-sm" />
-                              </button>
-                              <button
-                                onClick={() => setDeleteCrewId(member.id)}
-                                className="p-2 rounded-lg bg-zinc-800/80 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 border border-zinc-800 hover:border-red-500/30 transition-all cursor-pointer"
-                              >
-                                <DeleteIcon className="text-sm" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <CrewTable
+              crew={filteredCrew}
+              movies={movies}
+              onEdit={handleOpenEditCrew}
+              onDelete={setDeleteCrewId}
+            />
           </div>
         )}
       </main>
@@ -758,147 +559,23 @@ export default function AdminPage() {
         crewOptions={crewOptions}
       />
 
-      {isCrewFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-card border border-zinc-800/60 p-6 md:p-8 rounded-2xl max-w-md w-full space-y-6 shadow-2xl relative animate-scale-up">
-            <button
-              onClick={() => setIsCrewFormOpen(false)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-white transition-colors cursor-pointer border-0"
-            >
-              <CloseIcon />
-            </button>
-
-            <div>
-              <h3 className="text-xl font-bold bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent">
-                {editingCrew
-                  ? LOCALIZATION.CREW_FORM.EDIT_TITLE
-                  : LOCALIZATION.CREW_FORM.ADD_TITLE}
-              </h3>
-              <p className="text-xs text-zinc-400 mt-1 font-light">
-                {LOCALIZATION.CREW_FORM.SUBTITLE}
-              </p>
-            </div>
-
-            <form onSubmit={handleCrewSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-zinc-300">
-                  {LOCALIZATION.CREW_FORM.NAME_LABEL}
-                </label>
-                <input
-                  type="text"
-                  placeholder={LOCALIZATION.CREW_FORM.NAME_PLACEHOLDER}
-                  value={crewNameInput}
-                  onChange={(e) => setCrewNameInput(e.target.value)}
-                  className="w-full bg-black/40 border border-zinc-800 focus:border-brand rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition-colors"
-                  required
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-zinc-300">
-                  {LOCALIZATION.CREW_FORM.PHOTO_LABEL}
-                </label>
-                <div className="relative group/file">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] ?? null;
-                      if (file) {
-                        setRawCrewFile(file);
-                        setCropImageSrc(URL.createObjectURL(file));
-                        setIsCropModalOpen(true);
-                        e.target.value = "";
-                      }
-                    }}
-                  />
-                  <div className="w-full bg-black/40 border border-zinc-800 group-hover/file:border-brand rounded-xl px-4 py-3 text-sm text-zinc-405 flex items-center justify-between transition-colors">
-                    <span
-                      className={
-                        crewPhotoName
-                          ? "text-white font-medium truncate max-w-[70%]"
-                          : "text-zinc-400"
-                      }
-                    >
-                      {crewPhotoName ||
-                        LOCALIZATION.CREW_FORM.PHOTO_PLACEHOLDER}
-                    </span>
-                    <span className="px-3 py-1 bg-zinc-800 text-zinc-300 rounded-lg text-xs font-semibold group-hover/file:bg-brand group-hover/file:text-white transition-colors">
-                      {LOCALIZATION.CREW_FORM.BROWSE}
-                    </span>
-                  </div>
-                </div>
-                {crewPhotoPreview && (
-                  <div className="flex items-center gap-3 mt-3 pl-1">
-                    <div className="relative w-16 h-16 rounded-full overflow-hidden border border-zinc-800 bg-black/40 shadow-inner group/crewpreview">
-                      <img
-                        src={crewPhotoPreview}
-                        alt="Crew Preview"
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCrewPhotoInput(null);
-                          setCrewPhotoName(null);
-                          setCrewPhotoPreview(
-                            editingCrew ? editingCrew.photoUrl || null : null,
-                          );
-                        }}
-                        className="absolute inset-0 bg-black/60 opacity-0 group-hover/crewpreview:opacity-100 transition-opacity flex items-center justify-center text-red-500 cursor-pointer border-0"
-                      >
-                        <CloseIcon className="text-sm text-white" />
-                      </button>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[11px] text-zinc-300 font-semibold">
-                        {LOCALIZATION.CREW_FORM.PREVIEW_TITLE}
-                      </span>
-                      <span className="text-[10px] text-zinc-500 leading-relaxed">
-                        {crewPhotoName
-                          ? LOCALIZATION.CREW_FORM.PREVIEW_CROPPED
-                          : LOCALIZATION.CREW_FORM.PREVIEW_ORIGINAL}
-                      </span>
-                      {crewPhotoName && rawCrewFile && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCropImageSrc(URL.createObjectURL(rawCrewFile));
-                            setIsCropModalOpen(true);
-                          }}
-                          className="text-[10px] text-brand hover:underline font-semibold w-fit text-left mt-1 cursor-pointer border-0 bg-transparent p-0"
-                        >
-                          {LOCALIZATION.CREW_FORM.RECROP}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-4 border-t border-zinc-800/40 flex items-center gap-3">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => setIsCrewFormOpen(false)}
-                  className="flex-1 py-2.5 text-xs font-semibold rounded-xl"
-                >
-                  {LOCALIZATION.CREW_FORM.CANCEL}
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1 py-2.5 text-xs font-semibold rounded-xl"
-                >
-                  {editingCrew
-                    ? LOCALIZATION.CREW_FORM.SAVE
-                    : LOCALIZATION.CREW_FORM.ADD}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <CrewFormModal
+        isOpen={isCrewFormOpen}
+        onClose={() => setIsCrewFormOpen(false)}
+        onSubmit={handleCrewSubmit}
+        editingCrew={editingCrew}
+        crewNameInput={crewNameInput}
+        setCrewNameInput={setCrewNameInput}
+        crewPhotoName={crewPhotoName}
+        setCrewPhotoName={setCrewPhotoName}
+        crewPhotoPreview={crewPhotoPreview}
+        setCrewPhotoPreview={setCrewPhotoPreview}
+        setCrewPhotoInput={setCrewPhotoInput}
+        rawCrewFile={rawCrewFile}
+        setRawCrewFile={setRawCrewFile}
+        setCropImageSrc={setCropImageSrc}
+        setIsCropModalOpen={setIsCropModalOpen}
+      />
 
       <ConfirmModal
         isOpen={deleteMovieId !== null}
@@ -992,7 +669,7 @@ export default function AdminPage() {
       />
 
       {isMutating && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/70 backdrop-blur-md animate-fade-in">
           <div className="flex flex-col items-center space-y-4">
             <div className="relative w-20 h-20">
               <div className="absolute inset-0 rounded-full border-4 border-zinc-800/60" />
