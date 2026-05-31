@@ -1,0 +1,813 @@
+import React, { useState, useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
+import CloseIcon from "@mui/icons-material/Close";
+import AddIcon from "@mui/icons-material/Add";
+import { Button } from "./button";
+import { Input } from "./input";
+import { Select } from "./select";
+import { CreatableSearchSelect } from "./search-select";
+import { Movie, Category, AgeRating, University } from "@/core/domain/movie";
+import { parseSchema } from "@/lib/validation";
+import { createMovieSchema } from "@/core/schema/movie";
+import { LOCALIZATION } from "@/core/constants/localization";
+
+interface MovieFormSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (validatedData: any) => void;
+  editingMovie: Movie | null;
+  categories: Category[];
+  ageRatings: AgeRating[];
+  universities: University[];
+  crewOptions: any[];
+}
+
+type MovieForm = {
+  title: string;
+  description: string;
+  category: string;
+  thumbnail?: File | null;
+  youtubeUrl: string;
+  year: number;
+  matchRate: number;
+  ageRating: string;
+  duration: number;
+  university?: string;
+  director?: string;
+  producer?: string;
+  writer?: string;
+  cast?: string;
+  btsVideo?: string;
+  btsPhotos?: FileList | File[] | string | null;
+};
+
+export const MovieFormSidebar: React.FC<MovieFormSidebarProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  editingMovie,
+  categories,
+  ageRatings,
+  universities,
+  crewOptions,
+}) => {
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  const [existingBtsPhotos, setExistingBtsPhotos] = useState<string[]>([]);
+  const [newBtsPhotosFiles, setNewBtsPhotosFiles] = useState<File[]>([]);
+  const [btsVideos, setBtsVideos] = useState<string[]>([""]);
+  const [movieCoverPreview, setMovieCoverPreview] = useState<string | null>(
+    null,
+  );
+
+  const [directors, setDirectors] = useState<
+    Array<{ id: string; name: string }>
+  >([{ id: "", name: "" }]);
+  const [producers, setProducers] = useState<
+    Array<{ id: string; name: string }>
+  >([{ id: "", name: "" }]);
+  const [writers, setWriters] = useState<Array<{ id: string; name: string }>>([
+    { id: "", name: "" },
+  ]);
+  const [castMembers, setCastMembers] = useState<
+    Array<{ id: string; name: string }>
+  >([{ id: "", name: "" }]);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    reset,
+    control,
+    formState: { errors },
+  } = useForm<MovieForm>();
+
+  useEffect(() => {
+    if (isOpen) {
+      if (editingMovie) {
+        setSelectedFileName(null);
+        setMovieCoverPreview(
+          typeof editingMovie.thumbnail === "string"
+            ? editingMovie.thumbnail
+            : null,
+        );
+        setExistingBtsPhotos(editingMovie.bts?.btsPhotos || []);
+        setNewBtsPhotosFiles([]);
+        setBtsVideos(
+          editingMovie.bts?.btsVideo && editingMovie.bts.btsVideo.length > 0
+            ? editingMovie.bts.btsVideo
+            : [""],
+        );
+
+        const movieDirectors =
+          editingMovie.crew
+            ?.filter((c) => c.role.toLowerCase() === "director")
+            .map((c) => ({
+              id: c.crewMember?.id || "",
+              name: c.crewMember?.name || "",
+            }))
+            .filter((x): x is { id: string; name: string } => !!x.name) || [];
+
+        const movieProducers =
+          editingMovie.crew
+            ?.filter((c) => c.role.toLowerCase() === "producer")
+            .map((c) => ({
+              id: c.crewMember?.id || "",
+              name: c.crewMember?.name || "",
+            }))
+            .filter((x): x is { id: string; name: string } => !!x.name) || [];
+
+        const movieWriters =
+          editingMovie.crew
+            ?.filter((c) => c.role.toLowerCase() === "writer")
+            .map((c) => ({
+              id: c.crewMember?.id || "",
+              name: c.crewMember?.name || "",
+            }))
+            .filter((x): x is { id: string; name: string } => !!x.name) || [];
+
+        const movieCast =
+          editingMovie.crew
+            ?.filter((c) => c.role.toLowerCase() === "cast")
+            .map((c) => ({
+              id: c.crewMember?.id || "",
+              name: c.crewMember?.name || "",
+            }))
+            .filter((x): x is { id: string; name: string } => !!x.name) || [];
+
+        setDirectors(
+          movieDirectors.length > 0 ? movieDirectors : [{ id: "", name: "" }],
+        );
+        setProducers(
+          movieProducers.length > 0 ? movieProducers : [{ id: "", name: "" }],
+        );
+        setWriters(
+          movieWriters.length > 0 ? movieWriters : [{ id: "", name: "" }],
+        );
+        setCastMembers(
+          movieCast.length > 0 ? movieCast : [{ id: "", name: "" }],
+        );
+
+        reset({
+          title: editingMovie.title,
+          description: editingMovie.description,
+          category: editingMovie.category,
+          thumbnail: null,
+          youtubeUrl: editingMovie.youtubeUrl,
+          year: editingMovie.year,
+          matchRate: editingMovie.matchRate,
+          ageRating: editingMovie.ageRating,
+          duration: editingMovie.duration,
+          university: editingMovie.university || "",
+          director: "",
+          producer: "",
+          writer: "",
+          cast: "",
+          btsVideo: editingMovie.bts?.btsVideo
+            ? editingMovie.bts.btsVideo.join(", ")
+            : "",
+          btsPhotos: editingMovie.bts?.btsPhotos
+            ? editingMovie.bts.btsPhotos.join(", ")
+            : "",
+        });
+      } else {
+        setSelectedFileName(null);
+        setMovieCoverPreview(null);
+        setExistingBtsPhotos([]);
+        setNewBtsPhotosFiles([]);
+        setBtsVideos([""]);
+        setDirectors([{ id: "", name: "" }]);
+        setProducers([{ id: "", name: "" }]);
+        setWriters([{ id: "", name: "" }]);
+        setCastMembers([{ id: "", name: "" }]);
+        reset({
+          title: "",
+          description: "",
+          category: "Action",
+          thumbnail: null,
+          youtubeUrl: "",
+          year: new Date().getFullYear(),
+          matchRate: 98,
+          ageRating: "PG",
+          duration: 120,
+          university: "",
+          director: "",
+          producer: "",
+          writer: "",
+          cast: "",
+          btsVideo: "",
+          btsPhotos: "",
+        });
+      }
+    }
+  }, [isOpen, editingMovie, reset]);
+
+  const handleBtsFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      setNewBtsPhotosFiles((prev) => [...prev, ...Array.from(files)]);
+    }
+  };
+
+  const handleRemoveExistingBts = (index: number) => {
+    setExistingBtsPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveNewBts = (index: number) => {
+    setNewBtsPhotosFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const onLocalSubmit = (data: MovieForm) => {
+    const activeVideos = btsVideos.map((v) => v.trim()).filter(Boolean);
+    const thumbnailFile = data.thumbnail;
+    const validated = parseSchema(createMovieSchema, {
+      ...data,
+      thumbnail: thumbnailFile || editingMovie?.thumbnail,
+      year: Number(data.year),
+      matchRate: Number(data.matchRate),
+      duration: Number(data.duration),
+      btsVideo: activeVideos.join(","),
+      btsPhotos: editingMovie
+        ? [...existingBtsPhotos, ...newBtsPhotosFiles]
+        : newBtsPhotosFiles,
+      director: directors
+        .filter((d) => d.name.trim() !== "")
+        .map((d) => d.id || d.name.trim()),
+      producer: producers
+        .filter((p) => p.name.trim() !== "")
+        .map((p) => p.id || p.name.trim()),
+      writer: writers
+        .filter((w) => w.name.trim() !== "")
+        .map((w) => w.id || w.name.trim()),
+      cast: castMembers
+        .filter((c) => c.name.trim() !== "")
+        .map((c) => c.id || c.name.trim()),
+    });
+    onSubmit(validated);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-end animate-fade-in bg-black/60 backdrop-blur-sm">
+      <div className="w-full max-w-xl h-full bg-card border-l border-zinc-800/40 p-6 md:p-8 flex flex-col justify-between shadow-2xl relative overflow-y-auto animate-slide-left">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+        >
+          <CloseIcon />
+        </button>
+
+        <div className="space-y-6 flex-1 pr-1.5">
+          <div>
+            <h3 className="text-xl font-bold bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent">
+              {editingMovie ? LOCALIZATION.MOVIE_FORM.EDIT_TITLE : LOCALIZATION.MOVIE_FORM.ADD_TITLE}
+            </h3>
+            <p className="text-xs text-zinc-400 mt-1 font-light">
+              {LOCALIZATION.MOVIE_FORM.SUBTITLE}
+            </p>
+          </div>
+
+          <form
+            id="movie-form"
+            onSubmit={handleSubmit(onLocalSubmit)}
+            className="space-y-5"
+          >
+            <Input
+              label={LOCALIZATION.MOVIE_FORM.TITLE_LABEL}
+              placeholder={LOCALIZATION.MOVIE_FORM.TITLE_PLACEHOLDER}
+              error={errors.title?.message}
+              {...register("title", { required: LOCALIZATION.MOVIE_FORM.TITLE_REQUIRED })}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <Select
+                label={LOCALIZATION.MOVIE_FORM.CATEGORY_LABEL}
+                error={errors.category?.message}
+                {...register("category", { required: LOCALIZATION.MOVIE_FORM.CATEGORY_REQUIRED })}
+                options={categories.map((cat) => ({
+                  value: cat.name,
+                  label: cat.name,
+                }))}
+              />
+
+              <Select
+                label={LOCALIZATION.MOVIE_FORM.AGE_LABEL}
+                error={errors.ageRating?.message}
+                {...register("ageRating", {
+                  required: LOCALIZATION.MOVIE_FORM.AGE_REQUIRED,
+                })}
+                options={ageRatings.map((rating) => ({
+                  value: rating.name,
+                  label: rating.name,
+                }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <Input
+                label={LOCALIZATION.MOVIE_FORM.YEAR_LABEL}
+                type="number"
+                placeholder={LOCALIZATION.MOVIE_FORM.YEAR_PLACEHOLDER}
+                error={errors.year?.message}
+                {...register("year", {
+                  required: LOCALIZATION.MOVIE_FORM.YEAR_REQUIRED,
+                  min: { value: 1900, message: LOCALIZATION.MOVIE_FORM.YEAR_MIN },
+                  max: { value: 2100, message: LOCALIZATION.MOVIE_FORM.YEAR_MAX },
+                })}
+              />
+
+              <Input
+                label={LOCALIZATION.MOVIE_FORM.MATCH_LABEL}
+                type="number"
+                placeholder={LOCALIZATION.MOVIE_FORM.MATCH_PLACEHOLDER}
+                error={errors.matchRate?.message}
+                {...register("matchRate", {
+                  required: LOCALIZATION.MOVIE_FORM.MATCH_REQUIRED,
+                  min: { value: 0, message: LOCALIZATION.MOVIE_FORM.MATCH_MIN },
+                  max: { value: 100, message: LOCALIZATION.MOVIE_FORM.MATCH_MAX },
+                })}
+              />
+
+              <Input
+                label={LOCALIZATION.MOVIE_FORM.DURATION_LABEL}
+                placeholder={LOCALIZATION.MOVIE_FORM.DURATION_PLACEHOLDER}
+                error={errors.duration?.message}
+                {...register("duration", {
+                  required: LOCALIZATION.MOVIE_FORM.DURATION_REQUIRED,
+                })}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-zinc-300">
+                {LOCALIZATION.MOVIE_FORM.COVER_LABEL}
+              </label>
+              <div className="relative group/file">
+                <Controller
+                  name="thumbnail"
+                  control={control}
+                  defaultValue={null}
+                  render={({ field }) => (
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] ?? null;
+                        field.onChange(file);
+                        setSelectedFileName(file?.name ?? null);
+                        if (file) {
+                          setMovieCoverPreview(URL.createObjectURL(file));
+                        } else {
+                          setMovieCoverPreview(
+                            editingMovie &&
+                              typeof editingMovie.thumbnail === "string"
+                              ? editingMovie.thumbnail
+                              : null,
+                          );
+                        }
+                      }}
+                    />
+                  )}
+                />
+                <div
+                  className={`w-full bg-black/40 border ${
+                    errors.thumbnail
+                      ? "border-red-500"
+                      : "border-zinc-800 group-hover/file:border-brand"
+                  } rounded-xl px-4 py-3 text-sm text-zinc-405 flex items-center justify-between transition-colors`}
+                >
+                  <span
+                    className={
+                      selectedFileName
+                        ? "text-white font-medium truncate max-w-[70%]"
+                        : "text-zinc-400"
+                    }
+                  >
+                    {selectedFileName || LOCALIZATION.MOVIE_FORM.COVER_PLACEHOLDER}
+                  </span>
+                  <span className="px-3 py-1 bg-zinc-800 text-zinc-300 rounded-lg text-xs font-semibold group-hover/file:bg-brand group-hover/file:text-white transition-colors">
+                    {LOCALIZATION.MOVIE_FORM.COVER_BROWSE}
+                  </span>
+                </div>
+              </div>
+              {movieCoverPreview && (
+                <div className="mt-2.5 relative rounded-xl overflow-hidden border border-zinc-800 bg-black/40 aspect-[16/9] w-full max-w-[240px] group/preview">
+                  <img
+                    src={movieCoverPreview}
+                    alt="Cover Preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setValue("thumbnail", null);
+                      setSelectedFileName(null);
+                      setMovieCoverPreview(
+                        editingMovie &&
+                          typeof editingMovie.thumbnail === "string"
+                          ? editingMovie.thumbnail
+                          : null,
+                      );
+                    }}
+                    className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-red-500 hover:text-white text-zinc-400 rounded-full transition-colors cursor-pointer border-0 shadow-md opacity-0 group-hover/preview:opacity-100"
+                  >
+                    <CloseIcon className="text-[10px]" />
+                  </button>
+                </div>
+              )}
+              {errors.thumbnail && (
+                <span className="text-[10px] text-red-500 block pl-1 font-semibold">
+                  {errors.thumbnail.message}
+                </span>
+              )}
+              {editingMovie && typeof editingMovie.thumbnail === "string" && (
+                <p className="text-[10px] text-zinc-500 pl-1 leading-relaxed">
+                  Current:{" "}
+                  <span className="text-brand font-medium truncate max-w-[200px] inline-block align-bottom">
+                    {editingMovie.thumbnail.split("/").pop()}
+                  </span>{" "}
+                  (Leave blank to keep existing)
+                </p>
+              )}
+            </div>
+
+            <Input
+              label={LOCALIZATION.MOVIE_FORM.YOUTUBE_LABEL}
+              placeholder={LOCALIZATION.MOVIE_FORM.YOUTUBE_PLACEHOLDER}
+              error={errors.youtubeUrl?.message}
+              {...register("youtubeUrl", {
+                required: LOCALIZATION.MOVIE_FORM.YOUTUBE_REQUIRED,
+              })}
+            />
+
+            <div className="border-t border-zinc-800/60 pt-4 mt-2 space-y-4">
+              <h4 className="text-xs font-bold text-brand uppercase tracking-wider">
+                {LOCALIZATION.MOVIE_FORM.CREW_SECTION_TITLE}
+              </h4>
+
+              <Select
+                label={LOCALIZATION.MOVIE_FORM.UNI_LABEL}
+                error={errors.university?.message}
+                {...register("university")}
+              >
+                <option value="" className="bg-zinc-900 text-zinc-405">
+                  {LOCALIZATION.MOVIE_FORM.UNI_SELECT_PLACEHOLDER}
+                </option>
+                {universities.map((uni) => (
+                  <option
+                    key={uni.id}
+                    value={uni.name}
+                    className="bg-zinc-900 text-white"
+                  >
+                    {uni.name}
+                  </option>
+                ))}
+              </Select>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-300">
+                  {LOCALIZATION.MOVIE_FORM.DIRECTOR_LABEL}
+                </label>
+                <div className="space-y-2">
+                  {directors.map((director, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <CreatableSearchSelect
+                        value={director}
+                        options={crewOptions}
+                        placeholder={LOCALIZATION.MOVIE_FORM.DIRECTOR_PLACEHOLDER}
+                        onChange={(val) => {
+                          const newDirectors = [...directors];
+                          newDirectors[idx] = val;
+                          setDirectors(newDirectors);
+                        }}
+                      />
+                      {directors.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setDirectors(directors.filter((_, i) => i !== idx))
+                          }
+                          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer flex-shrink-0"
+                        >
+                          <CloseIcon className="text-sm" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      setDirectors([...directors, { id: "", name: "" }])
+                    }
+                    className="py-1.5 px-3 text-[11px] h-8 w-fit flex items-center gap-1 bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 hover:text-white text-zinc-300 font-semibold"
+                  >
+                    <AddIcon className="text-xs" /> {LOCALIZATION.MOVIE_FORM.DIRECTOR_ADD}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-300">
+                  {LOCALIZATION.MOVIE_FORM.PRODUCER_LABEL}
+                </label>
+                <div className="space-y-2">
+                  {producers.map((producer, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <CreatableSearchSelect
+                        value={producer}
+                        options={crewOptions}
+                        placeholder={LOCALIZATION.MOVIE_FORM.PRODUCER_PLACEHOLDER}
+                        onChange={(val) => {
+                          const newProducers = [...producers];
+                          newProducers[idx] = val;
+                          setProducers(newProducers);
+                        }}
+                      />
+                      {producers.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setProducers(producers.filter((_, i) => i !== idx))
+                          }
+                          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer flex-shrink-0"
+                        >
+                          <CloseIcon className="text-sm" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      setProducers([...producers, { id: "", name: "" }])
+                    }
+                    className="py-1.5 px-3 text-[11px] h-8 w-fit flex items-center gap-1 bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 hover:text-white text-zinc-300 font-semibold"
+                  >
+                    <AddIcon className="text-xs" /> {LOCALIZATION.MOVIE_FORM.PRODUCER_ADD}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-300">
+                  {LOCALIZATION.MOVIE_FORM.WRITER_LABEL}
+                </label>
+                <div className="space-y-2">
+                  {writers.map((writer, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <CreatableSearchSelect
+                        value={writer}
+                        options={crewOptions}
+                        placeholder={LOCALIZATION.MOVIE_FORM.WRITER_PLACEHOLDER}
+                        onChange={(val) => {
+                          const newWriters = [...writers];
+                          newWriters[idx] = val;
+                          setWriters(newWriters);
+                        }}
+                      />
+                      {writers.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setWriters(writers.filter((_, i) => i !== idx))
+                          }
+                          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer flex-shrink-0"
+                        >
+                          <CloseIcon className="text-sm" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      setWriters([...writers, { id: "", name: "" }])
+                    }
+                    className="py-1.5 px-3 text-[11px] h-8 w-fit flex items-center gap-1 bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 hover:text-white text-zinc-300 font-semibold"
+                  >
+                    <AddIcon className="text-xs" /> {LOCALIZATION.MOVIE_FORM.WRITER_ADD}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-300">
+                  {LOCALIZATION.MOVIE_FORM.CAST_LABEL}
+                </label>
+                <div className="space-y-2">
+                  {castMembers.map((actor, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <CreatableSearchSelect
+                        value={actor}
+                        options={crewOptions}
+                        placeholder={LOCALIZATION.MOVIE_FORM.CAST_PLACEHOLDER}
+                        onChange={(val) => {
+                          const newCast = [...castMembers];
+                          newCast[idx] = val;
+                          setCastMembers(newCast);
+                        }}
+                      />
+                      {castMembers.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCastMembers(
+                              castMembers.filter((_, i) => i !== idx),
+                            )
+                          }
+                          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer flex-shrink-0"
+                        >
+                          <CloseIcon className="text-sm" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      setCastMembers([...castMembers, { id: "", name: "" }])
+                    }
+                    className="py-1.5 px-3 text-[11px] h-8 w-fit flex items-center gap-1 bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 hover:text-white text-zinc-300 font-semibold"
+                  >
+                    <AddIcon className="text-xs" /> {LOCALIZATION.MOVIE_FORM.CAST_ADD}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-zinc-300">
+                  {LOCALIZATION.MOVIE_FORM.BTS_VIDEO_LABEL}
+                </label>
+                <div className="space-y-2">
+                  {btsVideos.map((videoUrl, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        placeholder={LOCALIZATION.MOVIE_FORM.BTS_VIDEO_PLACEHOLDER}
+                        value={videoUrl}
+                        onChange={(e) => {
+                          const newVideos = [...btsVideos];
+                          newVideos[idx] = e.target.value;
+                          setBtsVideos(newVideos);
+                        }}
+                        className="flex-1 bg-black/40 border border-zinc-800 focus:border-brand rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition-colors"
+                      />
+                      {btsVideos.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBtsVideos(btsVideos.filter((_, i) => i !== idx));
+                          }}
+                          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer"
+                        >
+                          <CloseIcon className="text-sm" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setBtsVideos([...btsVideos, ""])}
+                    className="py-1.5 px-3 text-xs w-fit flex items-center gap-1.5"
+                  >
+                    <AddIcon className="text-xs" /> {LOCALIZATION.MOVIE_FORM.BTS_VIDEO_ADD}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-zinc-300">
+                  {LOCALIZATION.MOVIE_FORM.BTS_PHOTO_LABEL}
+                </label>
+
+                {(existingBtsPhotos.length > 0 ||
+                  newBtsPhotosFiles.length > 0) && (
+                  <div className="grid grid-cols-4 gap-2 mb-3">
+                    {existingBtsPhotos.map((url, idx) => (
+                      <div
+                        key={`existing-${idx}`}
+                        className="relative group aspect-square rounded-xl overflow-hidden border border-zinc-800 bg-black/40 shadow-sm"
+                      >
+                        <img
+                          src={url}
+                          alt="BTS Preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveExistingBts(idx)}
+                            className="p-1 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors cursor-pointer"
+                          >
+                            <CloseIcon className="text-xs" />
+                          </button>
+                        </div>
+                        <span className="absolute bottom-1 left-1 px-1 py-0.5 bg-black/75 rounded text-[8px] text-zinc-400 font-bold uppercase tracking-wider scale-90 origin-bottom-left">
+                          {LOCALIZATION.MOVIE_FORM.BTS_STATUS_SAVED}
+                        </span>
+                      </div>
+                    ))}
+
+                    {newBtsPhotosFiles.map((file, idx) => {
+                      const objectUrl = URL.createObjectURL(file);
+                      return (
+                        <div
+                          key={`new-${idx}`}
+                          className="relative group aspect-square rounded-xl overflow-hidden border border-brand/40 bg-black/40 shadow-sm"
+                        >
+                          <img
+                            src={objectUrl}
+                            alt="BTS Preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveNewBts(idx)}
+                              className="p-1 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors cursor-pointer"
+                            >
+                              <CloseIcon className="text-xs" />
+                            </button>
+                          </div>
+                          <span className="absolute bottom-1 left-1 px-1 py-0.5 bg-brand/80 rounded text-[8px] text-white font-bold uppercase tracking-wider scale-90 origin-bottom-left">
+                            {LOCALIZATION.MOVIE_FORM.BTS_STATUS_NEW}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="relative group/file">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleBtsFileChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className="w-full bg-black/40 border border-zinc-800 border-dashed rounded-xl px-4 py-4 text-sm text-zinc-405 flex flex-col items-center justify-center gap-1.5 transition-colors group-hover/file:border-brand/60">
+                    <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800/80 flex items-center justify-center text-zinc-400 group-hover/file:bg-brand/10 group-hover/file:border-brand/30 group-hover/file:text-brand transition-colors">
+                      <AddIcon className="text-sm" />
+                    </div>
+                    <span className="text-xs text-zinc-400 font-semibold group-hover/file:text-zinc-200 transition-colors">
+                      {LOCALIZATION.MOVIE_FORM.BTS_PHOTO_PLACEHOLDER}
+                    </span>
+                    <span className="text-[10px] text-zinc-500">
+                      {LOCALIZATION.MOVIE_FORM.BTS_PHOTO_SUBTEXT}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-zinc-300">
+                {LOCALIZATION.MOVIE_FORM.DESC_LABEL}
+              </label>
+              <textarea
+                rows={4}
+                placeholder={LOCALIZATION.MOVIE_FORM.DESC_PLACEHOLDER}
+                {...register("description", {
+                  required: LOCALIZATION.MOVIE_FORM.DESC_REQUIRED,
+                })}
+                className={`w-full bg-black/40 border ${
+                  errors.description ? "border-red-500" : "border-zinc-800"
+                } rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand transition-colors resize-none`}
+              />
+              {errors.description && (
+                <span className="text-[10px] text-red-500 block pl-1 font-semibold">
+                  {errors.description.message}
+                </span>
+              )}
+            </div>
+          </form>
+        </div>
+
+        <div className="pt-6 border-t border-zinc-800/40 flex items-center gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            className="flex-1 py-3 text-sm font-semibold rounded-xl"
+          >
+            {LOCALIZATION.MOVIE_FORM.CANCEL}
+          </Button>
+          <Button
+            type="submit"
+            form="movie-form"
+            className="flex-1 py-3 text-sm font-semibold rounded-xl"
+          >
+            {editingMovie ? LOCALIZATION.MOVIE_FORM.SAVE : LOCALIZATION.MOVIE_FORM.ADD}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};

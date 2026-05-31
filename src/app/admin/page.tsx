@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
 import Link from "next/link";
 import Navbar from "@/components/ui/navbar";
 import {
@@ -13,8 +12,6 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import SearchIcon from "@mui/icons-material/Search";
-import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CategoryIcon from "@mui/icons-material/Category";
@@ -22,12 +19,10 @@ import MovieIcon from "@mui/icons-material/Movie";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import StarIcon from "@mui/icons-material/Star";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import { parseSchema } from "@/lib/validation";
-import { createMovieSchema } from "@/core/schema/movie";
+import CloseIcon from "@mui/icons-material/Close";
 import { useAppStore } from "@/store/use-store";
 import Loading from "../loading";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   useMoviesQuery,
   useCreateMovieMutation,
@@ -46,27 +41,33 @@ import {
   useDeleteCrewMemberMutation,
 } from "@/hooks/use-crew-members";
 import { useLogoutMutation } from "@/hooks/use-auth";
-import { CreatableSearchSelect } from "@/components/ui/creatable-search-select";
 import PeopleIcon from "@mui/icons-material/People";
 import PersonIcon from "@mui/icons-material/Person";
+import { ConfirmModal } from "@/components/modal/confirm-modal";
+import { ImageCropper } from "@/components/modal/image-cropper";
+import { LOCALIZATION } from "@/core/constants/localization";
+import { StatsCard } from "@/components/ui/stats-card";
+import { SearchInput } from "@/components/ui/search-input";
+import { FilterSelect } from "@/components/ui/filter-select";
+import { MovieFormSidebar } from "@/components/ui/movie-form-sidebar";
 
-type MovieForm = {
+type ValidatedMoviePayload = {
   title: string;
   description: string;
   category: string;
-  thumbnail?: File | null;
+  thumbnail: File | string | null;
   youtubeUrl: string;
   year: number;
   matchRate: number;
   ageRating: string;
   duration: number;
   university?: string;
-  director?: string;
-  producer?: string;
-  writer?: string;
-  cast?: string;
+  director?: string[];
+  producer?: string[];
+  writer?: string[];
+  cast?: string[];
   btsVideo?: string;
-  btsPhotos?: FileList | File[] | string | null;
+  btsPhotos?: (File | string)[];
 };
 
 type Sortby = "title" | "year" | "views";
@@ -76,16 +77,12 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [sortBy, setSortBy] = useState<Sortby>("title");
-  const { currentUser, setCurrentUser, showToast } = useAppStore();
+  const { currentUser, showToast } = useAppStore();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingMovie, setEditingMovie] = useState<UpdateMovie | null>(null);
+  const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
   const [editingMovieId, setEditingMovieId] = useState<string | null>(null);
   const [deleteMovieId, setDeleteMovieId] = useState<string | null>(null);
-  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
-  const [existingBtsPhotos, setExistingBtsPhotos] = useState<string[]>([]);
-  const [newBtsPhotosFiles, setNewBtsPhotosFiles] = useState<File[]>([]);
-  const [btsVideos, setBtsVideos] = useState<string[]>([""]);
   const [isSavingLocal, setIsSavingLocal] = useState(false);
   const [isDeletingLocal, setIsDeletingLocal] = useState(false);
 
@@ -97,40 +94,36 @@ export default function AdminPage() {
   const [crewPhotoInput, setCrewPhotoInput] = useState<File | null>(null);
   const [crewPhotoName, setCrewPhotoName] = useState<string | null>(null);
 
-  const [directors, setDirectors] = useState<
-    Array<{ id: string; name: string }>
-  >([{ id: "", name: "" }]);
-  const [producers, setProducers] = useState<
-    Array<{ id: string; name: string }>
-  >([{ id: "", name: "" }]);
-  const [writers, setWriters] = useState<Array<{ id: string; name: string }>>([
-    { id: "", name: "" },
-  ]);
-  const [castMembers, setCastMembers] = useState<
-    Array<{ id: string; name: string }>
-  >([{ id: "", name: "" }]);
+  const [crewPhotoPreview, setCrewPhotoPreview] = useState<string | null>(null);
+  const [rawCrewFile, setRawCrewFile] = useState<File | null>(null);
 
-  const handleBtsFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      const fileArray = Array.from(files);
-      setNewBtsPhotosFiles((prev) => [...prev, ...fileArray]);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+
+  const [isConfirmMovieOpen, setIsConfirmMovieOpen] = useState(false);
+  const [movieFormPendingData, setMovieFormPendingData] =
+    useState<ValidatedMoviePayload | null>(null);
+  const [isConfirmCrewOpen, setIsConfirmCrewOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isFormOpen) {
+      setMovieFormPendingData(null);
     }
-  };
+  }, [isFormOpen]);
 
-  const handleRemoveExistingBts = (index: number) => {
-    setExistingBtsPhotos((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleRemoveNewBts = (index: number) => {
-    setNewBtsPhotosFiles((prev) => prev.filter((_, i) => i !== index));
-  };
+  useEffect(() => {
+    if (!isCrewFormOpen) {
+      setCrewPhotoPreview(null);
+      setRawCrewFile(null);
+    }
+  }, [isCrewFormOpen]);
 
   const { data: movies = [], isLoading: isMoviesLoading } = useMoviesQuery();
   const { data: availableCategories = [] } = useCategoriesQuery();
   const { data: availableAgeRatings = [] } = useAgeRatingsQuery();
   const { data: availableUniversities = [] } = useUniversitiesQuery();
   const { data: availableCrew = [] } = useCrewMembersQuery();
+
   const crewOptions = availableCrew.map((c) => ({
     id: c.id,
     name: c.name,
@@ -157,156 +150,35 @@ export default function AdminPage() {
     isDeletingLocal;
   const isMutating = isSaving || isDeleting;
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    reset,
-    control,
-    formState: { errors },
-  } = useForm<MovieForm>();
+  const isCrewAction =
+    createCrewMutation.isPending ||
+    updateCrewMutation.isPending ||
+    deleteCrewMutation.isPending ||
+    (activeTab === "crew" && (isSavingLocal || isDeletingLocal));
 
   const handleOpenAdd = () => {
     setEditingMovie(null);
-    setSelectedFileName(null);
-    setExistingBtsPhotos([]);
-    setNewBtsPhotosFiles([]);
-    setBtsVideos([""]);
-    setDirectors([{ id: "", name: "" }]);
-    setProducers([{ id: "", name: "" }]);
-    setWriters([{ id: "", name: "" }]);
-    setCastMembers([{ id: "", name: "" }]);
-    reset({
-      title: "",
-      description: "",
-      category: "Action",
-      thumbnail: null,
-      youtubeUrl: "",
-      year: new Date().getFullYear(),
-      matchRate: 98,
-      ageRating: "PG",
-      duration: 120,
-      university: "",
-      director: "",
-      producer: "",
-      writer: "",
-      cast: "",
-      btsVideo: "",
-      btsPhotos: "",
-    });
+    setEditingMovieId(null);
     setIsFormOpen(true);
   };
 
   const handleOpenEdit = (movie: Movie) => {
     setEditingMovie(movie);
     setEditingMovieId(movie.id);
-    setSelectedFileName(null);
-    setExistingBtsPhotos(movie.bts?.btsPhotos || []);
-    setNewBtsPhotosFiles([]);
-    setBtsVideos(
-      movie.bts?.btsVideo && movie.bts.btsVideo.length > 0
-        ? movie.bts.btsVideo
-        : [""],
-    );
-
-    const movieDirectors =
-      movie.crew
-        ?.filter((c) => c.role.toLowerCase() === "director")
-        .map((c) => ({
-          id: c.crewMember?.id || "",
-          name: c.crewMember?.name || "",
-        }))
-        .filter((x): x is { id: string; name: string } => !!x.name) || [];
-
-    const movieProducers =
-      movie.crew
-        ?.filter((c) => c.role.toLowerCase() === "producer")
-        .map((c) => ({
-          id: c.crewMember?.id || "",
-          name: c.crewMember?.name || "",
-        }))
-        .filter((x): x is { id: string; name: string } => !!x.name) || [];
-
-    const movieWriters =
-      movie.crew
-        ?.filter((c) => c.role.toLowerCase() === "writer")
-        .map((c) => ({
-          id: c.crewMember?.id || "",
-          name: c.crewMember?.name || "",
-        }))
-        .filter((x): x is { id: string; name: string } => !!x.name) || [];
-
-    const movieCast =
-      movie.crew
-        ?.filter((c) => c.role.toLowerCase() === "cast")
-        .map((c) => ({
-          id: c.crewMember?.id || "",
-          name: c.crewMember?.name || "",
-        }))
-        .filter((x): x is { id: string; name: string } => !!x.name) || [];
-
-    setDirectors(
-      movieDirectors.length > 0 ? movieDirectors : [{ id: "", name: "" }],
-    );
-    setProducers(
-      movieProducers.length > 0 ? movieProducers : [{ id: "", name: "" }],
-    );
-    setWriters(movieWriters.length > 0 ? movieWriters : [{ id: "", name: "" }]);
-    setCastMembers(movieCast.length > 0 ? movieCast : [{ id: "", name: "" }]);
-
-    reset({
-      title: movie.title,
-      description: movie.description,
-      category: movie.category,
-      thumbnail: null,
-      youtubeUrl: movie.youtubeUrl,
-      year: movie.year,
-      matchRate: movie.matchRate,
-      ageRating: movie.ageRating,
-      duration: movie.duration,
-      university: movie.university || "",
-      director: "",
-      producer: "",
-      writer: "",
-      cast: "",
-      btsVideo: movie.bts?.btsVideo ? movie.bts.btsVideo.join(", ") : "",
-      btsPhotos: movie.bts?.btsPhotos ? movie.bts.btsPhotos.join(", ") : "",
-    });
     setIsFormOpen(true);
   };
 
-  const onSubmit = async (data: MovieForm) => {
+  const handleMovieSubmit = (data: ValidatedMoviePayload) => {
+    setMovieFormPendingData(data);
+    setIsConfirmMovieOpen(true);
+  };
+
+  const executeSaveMovie = async (validated: ValidatedMoviePayload) => {
     try {
       setIsSavingLocal(true);
-      const activeVideos = btsVideos.map((v) => v.trim()).filter(Boolean);
-      const thumbnailFile = data.thumbnail;
-      const validated = parseSchema(createMovieSchema, {
-        ...data,
-        thumbnail: thumbnailFile || editingMovie?.thumbnail,
-        year: Number(data.year),
-        matchRate: Number(data.matchRate),
-        duration: Number(data.duration),
-        btsVideo: activeVideos.join(","),
-        btsPhotos: editingMovie
-          ? [...existingBtsPhotos, ...newBtsPhotosFiles]
-          : newBtsPhotosFiles,
-        director: directors
-          .filter((d) => d.name.trim() !== "")
-          .map((d) => d.id || d.name.trim()),
-        producer: producers
-          .filter((p) => p.name.trim() !== "")
-          .map((p) => p.id || p.name.trim()),
-        writer: writers
-          .filter((w) => w.name.trim() !== "")
-          .map((w) => w.id || w.name.trim()),
-        cast: castMembers
-          .filter((c) => c.name.trim() !== "")
-          .map((c) => c.id || c.name.trim()),
-      });
 
       if (editingMovie) {
         const updatedMovie: UpdateMovie = {
-          ...editingMovie,
           title: validated.title,
           description: validated.description,
           category: validated.category,
@@ -332,7 +204,7 @@ export default function AdminPage() {
           id: editingMovieId!,
           movie: updatedMovie,
         });
-        showToast("แก้ไขภาพยนตร์เรียบร้อยแล้ว", "success");
+        showToast(LOCALIZATION.TOAST.EDIT_MOVIE_SUCCESS, "success");
       } else {
         const newMoviePayload: CreateMovie = {
           title: validated.title,
@@ -354,16 +226,15 @@ export default function AdminPage() {
             (validated.btsPhotos as CreateMovie["btsPhotos"]) || undefined,
         };
         await createMovieMutation.mutateAsync(newMoviePayload);
-        showToast("เพิ่มภาพยนตร์เรียบร้อยแล้ว", "success");
+        showToast(LOCALIZATION.TOAST.ADD_MOVIE_SUCCESS, "success");
       }
       setIsFormOpen(false);
       setEditingMovie(null);
-      reset();
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error
           ? err.message
-          : "เกิดข้อผิดพลาดในการบันทึกภาพยนตร์";
+          : LOCALIZATION.ERRORS.SAVE_MOVIE;
       showToast(errorMessage, "error");
       console.error(err);
     } finally {
@@ -376,11 +247,11 @@ export default function AdminPage() {
       try {
         setIsDeletingLocal(true);
         await deleteMovieMutation.mutateAsync(deleteMovieId);
-        showToast("ลบภาพยนตร์เรียบร้อยแล้ว", "success");
+        showToast(LOCALIZATION.TOAST.DELETE_MOVIE_SUCCESS, "success");
       } catch (err: unknown) {
         const errorMessage =
-          err instanceof Error ? err.message : "Failed to delete movie";
-        alert(errorMessage);
+          err instanceof Error ? err.message : LOCALIZATION.ERRORS.DELETE;
+        showToast(errorMessage, "error");
       } finally {
         setIsDeletingLocal(false);
         setDeleteMovieId(null);
@@ -393,6 +264,8 @@ export default function AdminPage() {
     setCrewNameInput("");
     setCrewPhotoInput(null);
     setCrewPhotoName(null);
+    setCrewPhotoPreview(null);
+    setRawCrewFile(null);
     setIsCrewFormOpen(true);
   };
 
@@ -401,15 +274,21 @@ export default function AdminPage() {
     setCrewNameInput(crew.name);
     setCrewPhotoInput(null);
     setCrewPhotoName(null);
+    setCrewPhotoPreview(crew.photoUrl || null);
+    setRawCrewFile(null);
     setIsCrewFormOpen(true);
   };
 
-  const handleCrewSubmit = async (e: React.FormEvent) => {
+  const handleCrewSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!crewNameInput.trim()) {
-      showToast("กรุณากรอกชื่อทีมงาน", "error");
+      showToast(LOCALIZATION.TOAST.REQUIRED_NAME, "error");
       return;
     }
+    setIsConfirmCrewOpen(true);
+  };
+
+  const executeSaveCrew = async () => {
     try {
       setIsSavingLocal(true);
 
@@ -421,13 +300,13 @@ export default function AdminPage() {
             photo: crewPhotoInput || editingCrew.photoUrl || null,
           },
         });
-        showToast("แก้ไขข้อมูลทีมงานเรียบร้อยแล้ว", "success");
+        showToast(LOCALIZATION.TOAST.EDIT_CREW_SUCCESS, "success");
       } else {
         await createCrewMutation.mutateAsync({
           name: crewNameInput.trim(),
           photo: crewPhotoInput,
         });
-        showToast("เพิ่มทีมงานเรียบร้อยแล้ว", "success");
+        showToast(LOCALIZATION.TOAST.ADD_CREW_SUCCESS, "success");
       }
       setIsCrewFormOpen(false);
       setEditingCrew(null);
@@ -436,7 +315,7 @@ export default function AdminPage() {
       setCrewPhotoName(null);
     } catch (err: unknown) {
       const errorMessage =
-        err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการบันทึกข้อมูล";
+        err instanceof Error ? err.message : LOCALIZATION.ERRORS.SAVE;
       showToast(errorMessage, "error");
       console.error(err);
     } finally {
@@ -449,10 +328,10 @@ export default function AdminPage() {
       try {
         setIsDeletingLocal(true);
         await deleteCrewMutation.mutateAsync(deleteCrewId);
-        showToast("ลบข้อมูลทีมงานเรียบร้อยแล้ว", "success");
+        showToast(LOCALIZATION.TOAST.DELETE_CREW_SUCCESS, "success");
       } catch (err: unknown) {
         const errorMessage =
-          err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการลบข้อมูล";
+          err instanceof Error ? err.message : LOCALIZATION.ERRORS.DELETE;
         showToast(errorMessage, "error");
         console.error(err);
       } finally {
@@ -537,13 +416,13 @@ export default function AdminPage() {
                 href="/"
                 className="hover:text-brand transition-colors flex items-center gap-1"
               >
-                <ArrowBackIcon className="text-sm" /> Back to Home
+                <ArrowBackIcon className="text-sm" /> {LOCALIZATION.ADMIN.BACK_HOME}
               </Link>
               <span>/</span>
-              <span className="text-zinc-300">Admin Dashboard</span>
+              <span className="text-zinc-300">{LOCALIZATION.ADMIN.DASHBOARD_TITLE}</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-wide bg-gradient-to-r from-white via-zinc-200 to-zinc-500 bg-clip-text text-transparent">
-              Admin Workspace
+              {LOCALIZATION.ADMIN.DASHBOARD_TITLE}
             </h1>
           </div>
 
@@ -552,62 +431,34 @@ export default function AdminPage() {
             className="flex items-center justify-center gap-2"
           >
             <AddIcon className="text-lg" />
-            {activeTab === "movies" ? "Add New Movie" : "Add Crew Member"}
+            {activeTab === "movies" ? LOCALIZATION.ADMIN.ADD_MOVIE : LOCALIZATION.ADMIN.ADD_CREW}
           </Button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 animate-fade-in">
-          <div className="bg-card border border-zinc-800/40 p-5 rounded-2xl flex items-center gap-5 shadow-xl backdrop-blur-md transition-all duration-300 hover:border-brand/35 hover:-translate-y-0.5">
-            <div className="w-12 h-12 rounded-xl bg-brand/10 border border-brand/20 flex items-center justify-center text-brand">
-              <MovieIcon className="text-2xl" />
-            </div>
-            <div className="space-y-0.5">
-              <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold text-[10px]">
-                Total Titles
-              </p>
-              <h3 className="text-2xl font-black">{movies.length}</h3>
-            </div>
-          </div>
-
-          <div className="bg-card border border-zinc-800/40 p-5 rounded-2xl flex items-center gap-5 shadow-xl backdrop-blur-md transition-all duration-300 hover:border-brand/35 hover:-translate-y-0.5">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <CategoryIcon className="text-2xl" />
-            </div>
-            <div className="space-y-0.5">
-              <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold text-[10px]">
-                Categories
-              </p>
-              <h3 className="text-2xl font-black">
-                {availableCategories.length}
-              </h3>
-            </div>
-          </div>
-
-          <div className="bg-card border border-zinc-800/40 p-5 rounded-2xl flex items-center gap-5 shadow-xl backdrop-blur-md transition-all duration-300 hover:border-brand/35 hover:-translate-y-0.5">
-            <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-              <VisibilityIcon className="text-2xl" />
-            </div>
-            <div className="space-y-0.5">
-              <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold text-[10px]">
-                Total Views
-              </p>
-              <h3 className="text-2xl font-black">
-                {totalViews.toLocaleString()}
-              </h3>
-            </div>
-          </div>
-
-          <div className="bg-card border border-zinc-800/40 p-5 rounded-2xl flex items-center gap-5 shadow-xl backdrop-blur-md transition-all duration-300 hover:border-brand/35 hover:-translate-y-0.5">
-            <div className="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
-              <PeopleIcon className="text-2xl" />
-            </div>
-            <div className="space-y-0.5">
-              <p className="text-xs text-zinc-400 uppercase tracking-widest font-semibold text-[10px]">
-                Crew Directory
-              </p>
-              <h3 className="text-2xl font-black">{availableCrew.length}</h3>
-            </div>
-          </div>
+          <StatsCard
+            title={LOCALIZATION.ADMIN.TOTAL_TITLES}
+            value={movies.length}
+            icon={<MovieIcon className="text-2xl" />}
+          />
+          <StatsCard
+            title={LOCALIZATION.ADMIN.TOTAL_CATEGORIES}
+            value={availableCategories.length}
+            icon={<CategoryIcon className="text-2xl" />}
+            iconClassName="bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+          />
+          <StatsCard
+            title={LOCALIZATION.ADMIN.TOTAL_VIEWS}
+            value={totalViews.toLocaleString()}
+            icon={<VisibilityIcon className="text-2xl" />}
+            iconClassName="bg-cyan-500/10 border-cyan-500/20 text-cyan-400"
+          />
+          <StatsCard
+            title={LOCALIZATION.ADMIN.TOTAL_CREW}
+            value={availableCrew.length}
+            icon={<PeopleIcon className="text-2xl" />}
+            iconClassName="bg-violet-500/10 border-violet-500/20 text-violet-400"
+          />
         </div>
 
         <div className="flex border-b border-zinc-800/60 gap-8">
@@ -619,7 +470,7 @@ export default function AdminPage() {
                 : "text-zinc-400 hover:text-zinc-200 cursor-pointer"
             }`}
           >
-            ภาพยนตร์ ({movies.length})
+            {LOCALIZATION.ADMIN.TAB_MOVIES(movies.length)}
             {activeTab === "movies" && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand rounded-full animate-fade-in" />
             )}
@@ -632,7 +483,7 @@ export default function AdminPage() {
                 : "text-zinc-400 hover:text-zinc-200 cursor-pointer"
             }`}
           >
-            ทีมงาน & นักแสดง ({availableCrew.length})
+            {LOCALIZATION.ADMIN.TAB_CREW(availableCrew.length)}
             {activeTab === "crew" && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand rounded-full animate-fade-in" />
             )}
@@ -642,72 +493,36 @@ export default function AdminPage() {
         {activeTab === "movies" ? (
           <div className="bg-card border border-zinc-800/35 rounded-2xl shadow-xl overflow-hidden backdrop-blur-md animate-fade-in">
             <div className="p-5 border-b border-zinc-800/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="relative flex-1 max-w-md">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-500">
-                  <SearchIcon className="text-lg" />
-                </span>
-                <input
-                  type="text"
-                  placeholder="Search catalog by title, genre, or description..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-sm bg-black/40 border border-zinc-800 focus:border-brand focus:outline-none rounded-xl text-white placeholder-zinc-500 transition-colors"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-white transition-colors"
-                  >
-                    <CloseIcon className="text-base" />
-                  </button>
-                )}
-              </div>
+              <SearchInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder={LOCALIZATION.ADMIN.SEARCH_MOVIE_PLACEHOLDER}
+              />
 
               <div className="flex items-center gap-3 self-end md:self-auto">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-zinc-400 font-semibold whitespace-nowrap">
-                    Filter:
-                  </span>
-                  <select
-                    value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="text-xs bg-zinc-900 border border-zinc-800 text-white rounded-lg px-3 py-1.5 focus:border-brand focus:outline-none cursor-pointer"
-                  >
-                    <option value="" className="bg-zinc-900 text-white">
-                      All Categories
-                    </option>
-                    {availableCategories.map((cat) => (
-                      <option
-                        key={cat.id}
-                        value={cat.name}
-                        className="bg-zinc-900 text-white"
-                      >
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <FilterSelect
+                  label={LOCALIZATION.ADMIN.FILTER_LABEL}
+                  value={categoryFilter}
+                  onChange={setCategoryFilter}
+                  options={[
+                    { value: "", label: LOCALIZATION.ADMIN.FILTER_ALL },
+                    ...availableCategories.map((cat) => ({
+                      value: cat.name,
+                      label: cat.name,
+                    })),
+                  ]}
+                />
 
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-zinc-400 font-semibold whitespace-nowrap">
-                    Sort:
-                  </span>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as Sortby)}
-                    className="text-xs bg-zinc-900 border border-zinc-800 text-white rounded-lg px-3 py-1.5 focus:border-brand focus:outline-none cursor-pointer"
-                  >
-                    <option value="title" className="bg-zinc-900 text-white">
-                      Alphabetical
-                    </option>
-                    <option value="year" className="bg-zinc-900 text-white">
-                      Release Year
-                    </option>
-                    <option value="views" className="bg-zinc-900 text-white">
-                      Popularity
-                    </option>
-                  </select>
-                </div>
+                <FilterSelect
+                  label={LOCALIZATION.ADMIN.SORT_LABEL}
+                  value={sortBy}
+                  onChange={(val) => setSortBy(val as Sortby)}
+                  options={[
+                    { value: "title", label: LOCALIZATION.ADMIN.SORT_ALPHA },
+                    { value: "year", label: LOCALIZATION.ADMIN.SORT_YEAR },
+                    { value: "views", label: LOCALIZATION.ADMIN.SORT_VIEWS },
+                  ]}
+                />
               </div>
             </div>
 
@@ -715,12 +530,12 @@ export default function AdminPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-800/40 text-xs font-bold text-zinc-400 uppercase bg-zinc-950/20">
-                    <th className="py-4 px-6">Movie</th>
-                    <th className="py-4 px-6">Genre</th>
-                    <th className="py-4 px-6">Release / Rating</th>
-                    <th className="py-4 px-6">Duration</th>
-                    <th className="py-4 px-6">Stats</th>
-                    <th className="py-4 px-6 text-right">Actions</th>
+                    <th className="py-4 px-6">{LOCALIZATION.ADMIN.TABLE_MOVIE}</th>
+                    <th className="py-4 px-6">{LOCALIZATION.ADMIN.TABLE_GENRE}</th>
+                    <th className="py-4 px-6">{LOCALIZATION.ADMIN.TABLE_RELEASE}</th>
+                    <th className="py-4 px-6">{LOCALIZATION.ADMIN.TABLE_DURATION}</th>
+                    <th className="py-4 px-6">{LOCALIZATION.ADMIN.TABLE_STATS}</th>
+                    <th className="py-4 px-6 text-right">{LOCALIZATION.ADMIN.TABLE_ACTIONS}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/30 text-sm">
@@ -730,7 +545,7 @@ export default function AdminPage() {
                         colSpan={6}
                         className="py-16 text-center text-zinc-500 font-light"
                       >
-                        No movies matching your active filter.
+                        {LOCALIZATION.ADMIN.NO_MOVIES}
                       </td>
                     </tr>
                   ) : (
@@ -769,11 +584,11 @@ export default function AdminPage() {
                             {movie.year}
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className="px-1.5 py-0.5 text-[10px] font-bold border border-zinc-700 text-zinc-400 rounded leading-none">
+                            <span className="px-1 py-0.5 text-[9px] font-bold border border-zinc-700 text-zinc-400 rounded leading-none">
                               {movie.ageRating}
                             </span>
                             <span className="text-[10px] text-emerald-400 font-bold">
-                              {movie.matchRate}% Match
+                              {LOCALIZATION.ADMIN.MATCH_RATE(movie.matchRate)}
                             </span>
                           </div>
                         </td>
@@ -788,11 +603,11 @@ export default function AdminPage() {
                         <td className="py-4 px-6 space-y-1">
                           <div className="text-xs text-zinc-300 flex items-center gap-1">
                             <VisibilityIcon className="text-xs text-zinc-500" />
-                            {(movie.views || 0).toLocaleString()} views
+                            {LOCALIZATION.ADMIN.VIEWS_COUNT(movie.views || 0)}
                           </div>
                           <div className="text-[10px] text-zinc-400 flex items-center gap-1">
                             <StarIcon className="text-[10px] text-zinc-500" />
-                            {movie.ratings?.length || 0} reviews
+                            {LOCALIZATION.ADMIN.REVIEWS_COUNT(movie.ratings?.length || 0)}
                           </div>
                         </td>
 
@@ -822,36 +637,21 @@ export default function AdminPage() {
         ) : (
           <div className="bg-card border border-zinc-800/35 rounded-2xl shadow-xl overflow-hidden backdrop-blur-md animate-fade-in">
             <div className="p-5 border-b border-zinc-800/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="relative flex-1 max-w-md">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-500">
-                  <SearchIcon className="text-lg" />
-                </span>
-                <input
-                  type="text"
-                  placeholder="ค้นหาชื่อทีมงาน / นักแสดง..."
-                  value={crewSearchQuery}
-                  onChange={(e) => setCrewSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-sm bg-black/40 border border-zinc-800 focus:border-brand focus:outline-none rounded-xl text-white placeholder-zinc-500 transition-colors"
-                />
-                {crewSearchQuery && (
-                  <button
-                    onClick={() => setCrewSearchQuery("")}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-white transition-colors"
-                  >
-                    <CloseIcon className="text-base" />
-                  </button>
-                )}
-              </div>
+              <SearchInput
+                value={crewSearchQuery}
+                onChange={setCrewSearchQuery}
+                placeholder={LOCALIZATION.ADMIN.SEARCH_CREW_PLACEHOLDER}
+              />
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-800/40 text-xs font-bold text-zinc-400 uppercase bg-zinc-950/20">
-                    <th className="py-4 px-6">ชื่อ-นามสกุล</th>
-                    <th className="py-4 px-6">สถานะผลงาน</th>
-                    <th className="py-4 px-6">วันที่บันทึก</th>
-                    <th className="py-4 px-6 text-right">จัดการ</th>
+                    <th className="py-4 px-6">{LOCALIZATION.ADMIN.TABLE_CREW_NAME}</th>
+                    <th className="py-4 px-6">{LOCALIZATION.ADMIN.TABLE_CREW_STATUS}</th>
+                    <th className="py-4 px-6">{LOCALIZATION.ADMIN.TABLE_CREW_DATE}</th>
+                    <th className="py-4 px-6 text-right">{LOCALIZATION.ADMIN.TABLE_ACTIONS}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/30 text-sm">
@@ -861,7 +661,7 @@ export default function AdminPage() {
                         colSpan={4}
                         className="py-16 text-center text-zinc-500 font-light"
                       >
-                        ไม่พบรายชื่อทีมงานที่ระบุ
+                        {LOCALIZATION.ADMIN.NO_CREW}
                       </td>
                     </tr>
                   ) : (
@@ -909,7 +709,7 @@ export default function AdminPage() {
                             </span>
                           </td>
 
-                          <td className="py-4 px-6 text-zinc-450 font-light">
+                          <td className="py-4 px-6 text-zinc-400 font-light">
                             {new Date(member.createdAt).toLocaleDateString(
                               "th-TH",
                               {
@@ -947,607 +747,17 @@ export default function AdminPage() {
         )}
       </main>
 
-      {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-end animate-fade-in bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-xl h-full bg-card border-l border-zinc-800/40 p-6 md:p-8 flex flex-col justify-between shadow-2xl relative overflow-y-auto animate-slide-left">
-            <button
-              onClick={() => setIsFormOpen(false)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-            >
-              <CloseIcon />
-            </button>
+      <MovieFormSidebar
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={handleMovieSubmit}
+        editingMovie={editingMovie}
+        categories={availableCategories}
+        ageRatings={availableAgeRatings}
+        universities={availableUniversities}
+        crewOptions={crewOptions}
+      />
 
-            <div className="space-y-6 flex-1 pr-1.5">
-              <div>
-                <h3 className="text-xl font-bold bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent">
-                  {editingMovie ? "Edit Film Details" : "Publish New Film"}
-                </h3>
-                <p className="text-xs text-zinc-400 mt-1 font-light">
-                  Provide correct information to catalog this film successfully.
-                </p>
-              </div>
-
-              <form
-                id="movie-form"
-                onSubmit={handleSubmit(onSubmit)}
-                className="space-y-5"
-              >
-                <Input
-                  label="Title"
-                  placeholder="e.g. Interstellar"
-                  error={errors.title?.message}
-                  {...register("title", { required: "Title is required" })}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-300">
-                      Category
-                    </label>
-                    <select
-                      {...register("category", {
-                        required: "Category is required",
-                      })}
-                      className="w-full bg-black/40 border border-zinc-800 focus:border-brand rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition-colors cursor-pointer"
-                    >
-                      {availableCategories.map((cat) => (
-                        <option
-                          key={cat.id}
-                          value={cat.name}
-                          className="bg-zinc-900 text-white"
-                        >
-                          {cat.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-300">
-                      Age Rating
-                    </label>
-                    <select
-                      {...register("ageRating", {
-                        required: "Age rating is required",
-                      })}
-                      className="w-full bg-black/40 border border-zinc-800 focus:border-brand rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition-colors cursor-pointer"
-                    >
-                      {availableAgeRatings.map((rating) => (
-                        <option
-                          key={rating.id}
-                          value={rating.name}
-                          className="bg-zinc-900 text-white"
-                        >
-                          {rating.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <Input
-                    label="Year"
-                    type="number"
-                    placeholder="e.g. 2024"
-                    error={errors.year?.message}
-                    {...register("year", {
-                      required: "Year is required",
-                      min: { value: 1900, message: "Invalid year" },
-                      max: { value: 2100, message: "Invalid year" },
-                    })}
-                  />
-
-                  <Input
-                    label="Match %"
-                    type="number"
-                    placeholder="98"
-                    error={errors.matchRate?.message}
-                    {...register("matchRate", {
-                      required: "Match rate is required",
-                      min: { value: 0, message: "Min 0%" },
-                      max: { value: 100, message: "Max 100%" },
-                    })}
-                  />
-
-                  <Input
-                    label="Duration"
-                    placeholder="e.g. 2h 10m"
-                    error={errors.duration?.message}
-                    {...register("duration", {
-                      required: "Duration is required",
-                    })}
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-300">
-                    Cover Image
-                  </label>
-                  <div className="relative group/file">
-                    <Controller
-                      name="thumbnail"
-                      control={control}
-                      defaultValue={null}
-                      render={({ field }) => (
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0] ?? null;
-
-                            field.onChange(file);
-
-                            setSelectedFileName(file?.name ?? null);
-                          }}
-                        />
-                      )}
-                    />
-                    <div
-                      className={`w-full bg-black/40 border ${
-                        errors.thumbnail
-                          ? "border-red-500"
-                          : "border-zinc-800 group-hover/file:border-brand"
-                      } rounded-xl px-4 py-3 text-sm text-zinc-405 flex items-center justify-between transition-colors`}
-                    >
-                      <span
-                        className={
-                          selectedFileName
-                            ? "text-white font-medium truncate max-w-[70%]"
-                            : "text-zinc-400"
-                        }
-                      >
-                        {selectedFileName || "Upload cover image file..."}
-                      </span>
-                      <span className="px-3 py-1 bg-zinc-800 text-zinc-300 rounded-lg text-xs font-semibold group-hover/file:bg-brand group-hover/file:text-white transition-colors">
-                        Browse
-                      </span>
-                    </div>
-                  </div>
-                  {errors.thumbnail && (
-                    <span className="text-[10px] text-red-500 block pl-1 font-semibold">
-                      {errors.thumbnail.message}
-                    </span>
-                  )}
-                  {editingMovie &&
-                    typeof editingMovie.thumbnail === "string" && (
-                      <p className="text-[10px] text-zinc-500 pl-1 leading-relaxed">
-                        Current:{" "}
-                        <span className="text-brand font-medium truncate max-w-[200px] inline-block align-bottom">
-                          {editingMovie.thumbnail.split("/").pop()}
-                        </span>{" "}
-                        (Leave blank to keep existing)
-                      </p>
-                    )}
-                </div>
-
-                <Input
-                  label="YouTube Trailer URL"
-                  placeholder="https://www.youtube.com/watch?v=..."
-                  error={errors.youtubeUrl?.message}
-                  {...register("youtubeUrl", {
-                    required: "YouTube URL is required",
-                  })}
-                />
-
-                <div className="border-t border-zinc-800/60 pt-4 mt-2 space-y-4">
-                  <h4 className="text-xs font-bold text-brand uppercase tracking-wider">
-                    Production & Crew Details (ข้อมูลผู้สร้างและเบื้องหลัง)
-                  </h4>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-300">
-                      University / Institution (สถาบัน/มหาวิทยาลัย)
-                    </label>
-                    <select
-                      {...register("university")}
-                      className="w-full bg-black/40 border border-zinc-800 focus:border-brand rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition-colors cursor-pointer"
-                    >
-                      <option value="" className="bg-zinc-900 text-zinc-400">
-                        None / Select University
-                      </option>
-                      {availableUniversities.map((uni) => (
-                        <option
-                          key={uni.id}
-                          value={uni.name}
-                          className="bg-zinc-900 text-white"
-                        >
-                          {uni.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-300">
-                      Director (ผู้กำกับ)
-                    </label>
-                    <div className="space-y-2">
-                      {directors.map((director, idx) => (
-                        <div key={idx} className="flex gap-2 items-center">
-                          <CreatableSearchSelect
-                            value={director}
-                            options={crewOptions}
-                            placeholder="พิมพ์ชื่อ หรือเลือกผู้กำกับ..."
-                            onChange={(val) => {
-                              const newDirectors = [...directors];
-                              newDirectors[idx] = val;
-                              setDirectors(newDirectors);
-                            }}
-                          />
-                          {directors.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setDirectors(
-                                  directors.filter((_, i) => i !== idx),
-                                )
-                              }
-                              className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer flex-shrink-0"
-                            >
-                              <CloseIcon className="text-sm" />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() =>
-                          setDirectors([...directors, { id: "", name: "" }])
-                        }
-                        className="py-1.5 px-3 text-[11px] h-8 w-fit flex items-center gap-1 bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 hover:text-white text-zinc-300 font-semibold"
-                      >
-                        <AddIcon className="text-xs" /> Add Director
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-300">
-                      Producer (ผู้อำนวยการสร้าง)
-                    </label>
-                    <div className="space-y-2">
-                      {producers.map((producer, idx) => (
-                        <div key={idx} className="flex gap-2 items-center">
-                          <CreatableSearchSelect
-                            value={producer}
-                            options={crewOptions}
-                            placeholder="พิมพ์ชื่อ หรือเลือกผู้อำนวยการสร้าง..."
-                            onChange={(val) => {
-                              const newProducers = [...producers];
-                              newProducers[idx] = val;
-                              setProducers(newProducers);
-                            }}
-                          />
-                          {producers.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setProducers(
-                                  producers.filter((_, i) => i !== idx),
-                                )
-                              }
-                              className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer flex-shrink-0"
-                            >
-                              <CloseIcon className="text-sm" />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() =>
-                          setProducers([...producers, { id: "", name: "" }])
-                        }
-                        className="py-1.5 px-3 text-[11px] h-8 w-fit flex items-center gap-1 bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 hover:text-white text-zinc-300 font-semibold"
-                      >
-                        <AddIcon className="text-xs" /> Add Producer
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-300">
-                      Writer (ผู้เขียนบท)
-                    </label>
-                    <div className="space-y-2">
-                      {writers.map((writer, idx) => (
-                        <div key={idx} className="flex gap-2 items-center">
-                          <CreatableSearchSelect
-                            value={writer}
-                            options={crewOptions}
-                            placeholder="พิมพ์ชื่อ หรือเลือกผู้เขียนบท..."
-                            onChange={(val) => {
-                              const newWriters = [...writers];
-                              newWriters[idx] = val;
-                              setWriters(newWriters);
-                            }}
-                          />
-                          {writers.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setWriters(writers.filter((_, i) => i !== idx))
-                              }
-                              className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer flex-shrink-0"
-                            >
-                              <CloseIcon className="text-sm" />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() =>
-                          setWriters([...writers, { id: "", name: "" }])
-                        }
-                        className="py-1.5 px-3 text-[11px] h-8 w-fit flex items-center gap-1 bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 hover:text-white text-zinc-300 font-semibold"
-                      >
-                        <AddIcon className="text-xs" /> Add Writer
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-300">
-                      Cast (นักแสดง)
-                    </label>
-                    <div className="space-y-2">
-                      {castMembers.map((actor, idx) => (
-                        <div key={idx} className="flex gap-2 items-center">
-                          <CreatableSearchSelect
-                            value={actor}
-                            options={crewOptions}
-                            placeholder="พิมพ์ชื่อ หรือเลือกนักแสดง..."
-                            onChange={(val) => {
-                              const newCast = [...castMembers];
-                              newCast[idx] = val;
-                              setCastMembers(newCast);
-                            }}
-                          />
-                          {castMembers.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setCastMembers(
-                                  castMembers.filter((_, i) => i !== idx),
-                                )
-                              }
-                              className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer flex-shrink-0"
-                            >
-                              <CloseIcon className="text-sm" />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() =>
-                          setCastMembers([...castMembers, { id: "", name: "" }])
-                        }
-                        className="py-1.5 px-3 text-[11px] h-8 w-fit flex items-center gap-1 bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 hover:text-white text-zinc-300 font-semibold"
-                      >
-                        <AddIcon className="text-xs" /> Add Actor
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-zinc-300">
-                      BTS Video URLs (ลิงก์วิดีโอเบื้องหลัง YouTube)
-                    </label>
-                    <div className="space-y-2">
-                      {btsVideos.map((videoUrl, idx) => (
-                        <div key={idx} className="flex gap-2 items-center">
-                          <input
-                            type="text"
-                            placeholder="https://www.youtube.com/watch?v=..."
-                            value={videoUrl}
-                            onChange={(e) => {
-                              const newVideos = [...btsVideos];
-                              newVideos[idx] = e.target.value;
-                              setBtsVideos(newVideos);
-                            }}
-                            className="flex-1 bg-black/40 border border-zinc-800 focus:border-brand rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition-colors"
-                          />
-                          {btsVideos.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setBtsVideos(
-                                  btsVideos.filter((_, i) => i !== idx),
-                                );
-                              }}
-                              className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl border border-red-500/20 transition-all cursor-pointer"
-                            >
-                              <CloseIcon className="text-sm" />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => setBtsVideos([...btsVideos, ""])}
-                        className="py-1.5 px-3 text-xs w-fit flex items-center gap-1.5"
-                      >
-                        <AddIcon className="text-xs" /> Add Another Video
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-zinc-300">
-                      BTS Photos (รูปภาพเบื้องหลัง)
-                    </label>
-
-                    {(existingBtsPhotos.length > 0 ||
-                      newBtsPhotosFiles.length > 0) && (
-                      <div className="grid grid-cols-4 gap-2 mb-3">
-                        {existingBtsPhotos.map((url, idx) => (
-                          <div
-                            key={`existing-${idx}`}
-                            className="relative group aspect-square rounded-xl overflow-hidden border border-zinc-800 bg-black/40 shadow-sm"
-                          >
-                            <img
-                              src={url}
-                              alt="BTS Preview"
-                              className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveExistingBts(idx)}
-                                className="p-1 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors cursor-pointer"
-                              >
-                                <CloseIcon className="text-xs" />
-                              </button>
-                            </div>
-                            <span className="absolute bottom-1 left-1 px-1 py-0.5 bg-black/75 rounded text-[8px] text-zinc-400 font-bold uppercase tracking-wider scale-90 origin-bottom-left">
-                              Saved
-                            </span>
-                          </div>
-                        ))}
-
-                        {newBtsPhotosFiles.map((file, idx) => {
-                          const objectUrl = URL.createObjectURL(file);
-                          return (
-                            <div
-                              key={`new-${idx}`}
-                              className="relative group aspect-square rounded-xl overflow-hidden border border-brand/40 bg-black/40 shadow-sm"
-                            >
-                              <img
-                                src={objectUrl}
-                                alt="BTS Preview"
-                                className="w-full h-full object-cover"
-                              />
-                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveNewBts(idx)}
-                                  className="p-1 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors cursor-pointer"
-                                >
-                                  <CloseIcon className="text-xs" />
-                                </button>
-                              </div>
-                              <span className="absolute bottom-1 left-1 px-1 py-0.5 bg-brand/80 rounded text-[8px] text-white font-bold uppercase tracking-wider scale-90 origin-bottom-left">
-                                New
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    <div className="relative group/file">
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={handleBtsFileChange}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      />
-                      <div className="w-full bg-black/40 border border-zinc-800 border-dashed rounded-xl px-4 py-4 text-sm text-zinc-405 flex flex-col items-center justify-center gap-1.5 transition-colors group-hover/file:border-brand/60">
-                        <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800/80 flex items-center justify-center text-zinc-400 group-hover/file:bg-brand/10 group-hover/file:border-brand/30 group-hover/file:text-brand transition-colors">
-                          <AddIcon className="text-sm" />
-                        </div>
-                        <span className="text-xs text-zinc-400 font-semibold group-hover/file:text-zinc-200 transition-colors">
-                          Upload behind-the-scenes files...
-                        </span>
-                        <span className="text-[10px] text-zinc-500">
-                          Select multiple files to upload BTS photos
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-300">
-                    Description
-                  </label>
-                  <textarea
-                    rows={4}
-                    placeholder="Enter short storyline..."
-                    {...register("description", {
-                      required: "Description is required",
-                    })}
-                    className={`w-full bg-black/40 border ${
-                      errors.description ? "border-red-500" : "border-zinc-800"
-                    } rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand transition-colors resize-none`}
-                  />
-                  {errors.description && (
-                    <span className="text-[10px] text-red-500 block pl-1 font-semibold">
-                      {errors.description.message}
-                    </span>
-                  )}
-                </div>
-              </form>
-            </div>
-
-            <div className="pt-6 border-t border-zinc-800/40 flex items-center gap-3">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setIsFormOpen(false)}
-                className="flex-1 py-3 text-sm font-semibold rounded-xl"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                form="movie-form"
-                className="flex-1 py-3 text-sm font-semibold rounded-xl"
-              >
-                {editingMovie ? "Save Changes" : "Publish Film"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {deleteMovieId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-card border border-zinc-800/60 p-6 md:p-8 rounded-2xl max-w-sm w-full text-center space-y-6 shadow-2xl relative animate-scale-up">
-            <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto text-2xl">
-              <DeleteIcon />
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="text-lg font-bold text-white">
-                Permanently Delete Film?
-              </h3>
-              <p className="text-xs text-zinc-400 leading-relaxed font-light">
-                This action is permanent. The selected title will be purged
-                immediately from the library catalog.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Button
-                variant="secondary"
-                onClick={() => setDeleteMovieId(null)}
-                className="flex-1 py-2.5 text-xs font-semibold rounded-xl"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleDeleteConfirm}
-                className="flex-1 py-2.5 text-xs font-semibold bg-red-500 hover:bg-red-600 text-white border-0 rounded-xl shadow-lg shadow-red-500/20"
-              >
-                Delete Title
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Crew Member Add/Edit Modal */}
       {isCrewFormOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-card border border-zinc-800/60 p-6 md:p-8 rounded-2xl max-w-md w-full space-y-6 shadow-2xl relative animate-scale-up">
@@ -1561,22 +771,22 @@ export default function AdminPage() {
             <div>
               <h3 className="text-xl font-bold bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent">
                 {editingCrew
-                  ? "แก้ไขข้อมูลทีมงาน"
-                  : "เพิ่มทีมงาน / นักแสดงใหม่"}
+                  ? LOCALIZATION.CREW_FORM.EDIT_TITLE
+                  : LOCALIZATION.CREW_FORM.ADD_TITLE}
               </h3>
               <p className="text-xs text-zinc-400 mt-1 font-light">
-                กรอกรายชื่อทีมงานหรือนักแสดงที่ต้องการเพิ่มเข้าสู่ระบบเพื่อใช้เป็นตัวเลือกสำหรับภาพยนตร์
+                {LOCALIZATION.CREW_FORM.SUBTITLE}
               </p>
             </div>
 
             <form onSubmit={handleCrewSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-zinc-300">
-                  ชื่อ-นามสกุล
+                  {LOCALIZATION.CREW_FORM.NAME_LABEL}
                 </label>
                 <input
                   type="text"
-                  placeholder="เช่น สมชาย ใจดี"
+                  placeholder={LOCALIZATION.CREW_FORM.NAME_PLACEHOLDER}
                   value={crewNameInput}
                   onChange={(e) => setCrewNameInput(e.target.value)}
                   className="w-full bg-black/40 border border-zinc-800 focus:border-brand rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition-colors"
@@ -1586,7 +796,7 @@ export default function AdminPage() {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-zinc-300">
-                  รูปภาพประจำตัว (อัปโหลดรูปภาพ)
+                  {LOCALIZATION.CREW_FORM.PHOTO_LABEL}
                 </label>
                 <div className="relative group/file">
                   <input
@@ -1595,8 +805,12 @@ export default function AdminPage() {
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     onChange={(e) => {
                       const file = e.target.files?.[0] ?? null;
-                      setCrewPhotoInput(file);
-                      setCrewPhotoName(file?.name ?? null);
+                      if (file) {
+                        setRawCrewFile(file);
+                        setCropImageSrc(URL.createObjectURL(file));
+                        setIsCropModalOpen(true);
+                        e.target.value = "";
+                      }
                     }}
                   />
                   <div className="w-full bg-black/40 border border-zinc-800 group-hover/file:border-brand rounded-xl px-4 py-3 text-sm text-zinc-405 flex items-center justify-between transition-colors">
@@ -1607,23 +821,58 @@ export default function AdminPage() {
                           : "text-zinc-400"
                       }
                     >
-                      {crewPhotoName || "อัปโหลดรูปภาพประจำตัว..."}
+                      {crewPhotoName ||
+                        LOCALIZATION.CREW_FORM.PHOTO_PLACEHOLDER}
                     </span>
                     <span className="px-3 py-1 bg-zinc-800 text-zinc-300 rounded-lg text-xs font-semibold group-hover/file:bg-brand group-hover/file:text-white transition-colors">
-                      เลือกไฟล์
+                      {LOCALIZATION.CREW_FORM.BROWSE}
                     </span>
                   </div>
                 </div>
-                {editingCrew && editingCrew.photoUrl && !crewPhotoInput && (
-                  <div className="flex items-center gap-2 mt-2 pl-1">
-                    <img
-                      src={editingCrew.photoUrl}
-                      alt={editingCrew.name}
-                      className="w-8 h-8 rounded-full object-cover border border-zinc-800 shadow-sm"
-                    />
-                    <span className="text-[10px] text-zinc-550 font-medium">
-                      รูปภาพปัจจุบันในระบบ
-                    </span>
+                {crewPhotoPreview && (
+                  <div className="flex items-center gap-3 mt-3 pl-1">
+                    <div className="relative w-16 h-16 rounded-full overflow-hidden border border-zinc-800 bg-black/40 shadow-inner group/crewpreview">
+                      <img
+                        src={crewPhotoPreview}
+                        alt="Crew Preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCrewPhotoInput(null);
+                          setCrewPhotoName(null);
+                          setCrewPhotoPreview(
+                            editingCrew ? editingCrew.photoUrl || null : null,
+                          );
+                        }}
+                        className="absolute inset-0 bg-black/60 opacity-0 group-hover/crewpreview:opacity-100 transition-opacity flex items-center justify-center text-red-500 cursor-pointer border-0"
+                      >
+                        <CloseIcon className="text-sm text-white" />
+                      </button>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[11px] text-zinc-300 font-semibold">
+                        {LOCALIZATION.CREW_FORM.PREVIEW_TITLE}
+                      </span>
+                      <span className="text-[10px] text-zinc-500 leading-relaxed">
+                        {crewPhotoName
+                          ? LOCALIZATION.CREW_FORM.PREVIEW_CROPPED
+                          : LOCALIZATION.CREW_FORM.PREVIEW_ORIGINAL}
+                      </span>
+                      {crewPhotoName && rawCrewFile && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCropImageSrc(URL.createObjectURL(rawCrewFile));
+                            setIsCropModalOpen(true);
+                          }}
+                          className="text-[10px] text-brand hover:underline font-semibold w-fit text-left mt-1 cursor-pointer border-0 bg-transparent p-0"
+                        >
+                          {LOCALIZATION.CREW_FORM.RECROP}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1635,13 +884,15 @@ export default function AdminPage() {
                   onClick={() => setIsCrewFormOpen(false)}
                   className="flex-1 py-2.5 text-xs font-semibold rounded-xl"
                 >
-                  ยกเลิก
+                  {LOCALIZATION.CREW_FORM.CANCEL}
                 </Button>
                 <Button
                   type="submit"
                   className="flex-1 py-2.5 text-xs font-semibold rounded-xl"
                 >
-                  {editingCrew ? "บันทึกการแก้ไข" : "เพิ่มรายชื่อ"}
+                  {editingCrew
+                    ? LOCALIZATION.CREW_FORM.SAVE
+                    : LOCALIZATION.CREW_FORM.ADD}
                 </Button>
               </div>
             </form>
@@ -1649,45 +900,99 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Crew Member Delete Confirmation Modal */}
-      {deleteCrewId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-card border border-zinc-800/60 p-6 md:p-8 rounded-2xl max-w-sm w-full text-center space-y-6 shadow-2xl relative animate-scale-up">
-            <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto text-2xl">
-              <DeleteIcon />
-            </div>
+      <ConfirmModal
+        isOpen={deleteMovieId !== null}
+        title={LOCALIZATION.CONFIRM.DELETE_MOVIE_TITLE}
+        message={LOCALIZATION.CONFIRM.DELETE_MOVIE_MSG}
+        variant="danger"
+        confirmText={LOCALIZATION.CONFIRM.DELETE_MOVIE_BTN}
+        cancelText={LOCALIZATION.CONFIRM.CANCEL}
+        onClose={() => setDeleteMovieId(null)}
+        onConfirm={handleDeleteConfirm}
+      />
 
-            <div className="space-y-2">
-              <h3 className="text-lg font-bold text-white">
-                ยืนยันการลบรายชื่อทีมงาน?
-              </h3>
-              <p className="text-xs text-zinc-400 leading-relaxed font-light">
-                การลบนี้เป็นแบบถาวรและไม่สามารถเรียกคืนได้
-                การลบรายชื่อนี้อาจส่งผลต่อข้อมูลของภาพยนตร์ที่มีทีมงานท่านนี้มีส่วนร่วมอยู่
-              </p>
-            </div>
+      <ConfirmModal
+        isOpen={deleteCrewId !== null}
+        title={LOCALIZATION.CONFIRM.DELETE_CREW_TITLE}
+        message={LOCALIZATION.CONFIRM.DELETE_CREW_MSG}
+        variant="danger"
+        confirmText={LOCALIZATION.CONFIRM.DELETE_CREW_BTN}
+        cancelText={LOCALIZATION.CONFIRM.CANCEL}
+        onClose={() => setDeleteCrewId(null)}
+        onConfirm={handleCrewDeleteConfirm}
+      />
 
-            <div className="flex items-center gap-3">
-              <Button
-                variant="secondary"
-                onClick={() => setDeleteCrewId(null)}
-                className="flex-1 py-2.5 text-xs font-semibold rounded-xl"
-              >
-                ยกเลิก
-              </Button>
-              <Button
-                onClick={handleCrewDeleteConfirm}
-                className="flex-1 py-2.5 text-xs font-semibold bg-red-500 hover:bg-red-600 text-white border-0 rounded-xl shadow-lg shadow-red-500/20"
-              >
-                ลบรายชื่อทีมงาน
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={isConfirmMovieOpen && movieFormPendingData !== null}
+        title={
+          editingMovie
+            ? LOCALIZATION.CONFIRM.EDIT_MOVIE_TITLE
+            : LOCALIZATION.CONFIRM.ADD_MOVIE_TITLE
+        }
+        message={
+          movieFormPendingData
+            ? editingMovie
+              ? LOCALIZATION.CONFIRM.EDIT_MOVIE_MSG(movieFormPendingData.title)
+              : LOCALIZATION.CONFIRM.ADD_MOVIE_MSG(movieFormPendingData.title)
+            : ""
+        }
+        iconType="movie"
+        confirmText={LOCALIZATION.CONFIRM.CONFIRM}
+        cancelText={LOCALIZATION.CONFIRM.CANCEL}
+        onClose={() => {
+          setIsConfirmMovieOpen(false);
+          setMovieFormPendingData(null);
+        }}
+        onConfirm={async () => {
+          setIsConfirmMovieOpen(false);
+          if (movieFormPendingData) {
+            await executeSaveMovie(movieFormPendingData);
+            setMovieFormPendingData(null);
+          }
+        }}
+      />
+
+      <ConfirmModal
+        isOpen={isConfirmCrewOpen}
+        title={
+          editingCrew
+            ? LOCALIZATION.CONFIRM.EDIT_CREW_TITLE
+            : LOCALIZATION.CONFIRM.ADD_CREW_TITLE
+        }
+        message={
+          editingCrew
+            ? LOCALIZATION.CONFIRM.EDIT_CREW_MSG(crewNameInput.trim())
+            : LOCALIZATION.CONFIRM.ADD_CREW_MSG(crewNameInput.trim())
+        }
+        iconType="crew"
+        confirmText={LOCALIZATION.CONFIRM.CONFIRM}
+        cancelText={LOCALIZATION.CONFIRM.CANCEL}
+        onClose={() => setIsConfirmCrewOpen(false)}
+        onConfirm={async () => {
+          setIsConfirmCrewOpen(false);
+          await executeSaveCrew();
+        }}
+      />
+
+      <ImageCropper
+        isOpen={isCropModalOpen}
+        imageSrc={cropImageSrc}
+        fileName={rawCrewFile?.name}
+        onClose={() => {
+          setIsCropModalOpen(false);
+          setRawCrewFile(null);
+          setCropImageSrc(null);
+        }}
+        onConfirm={(croppedFile, previewUrl) => {
+          setCrewPhotoInput(croppedFile);
+          setCrewPhotoName(croppedFile.name);
+          setCrewPhotoPreview(previewUrl);
+          setIsCropModalOpen(false);
+        }}
+      />
 
       {isMutating && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/70 backdrop-blur-md animate-fade-in">
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in">
           <div className="flex flex-col items-center space-y-4">
             <div className="relative w-20 h-20">
               <div className="absolute inset-0 rounded-full border-4 border-zinc-800/60" />
@@ -1695,12 +1000,22 @@ export default function AdminPage() {
             </div>
             <div className="space-y-1.5 text-center">
               <h3 className="text-xl font-bold tracking-wide text-white">
-                {isDeleting ? "กำลังลบภาพยนตร์..." : "กำลังบันทึกภาพยนตร์..."}
+                {isDeleting
+                  ? isCrewAction
+                    ? LOCALIZATION.LOADING.DELETE_CREW
+                    : LOCALIZATION.LOADING.DELETE_MOVIE
+                  : isCrewAction
+                    ? LOCALIZATION.LOADING.SAVE_CREW
+                    : LOCALIZATION.LOADING.SAVE_MOVIE}
               </h3>
               <p className="text-xs text-zinc-400 font-light">
                 {isDeleting
-                  ? "กรุณารอสักครู่ ระบบกำลังลบข้อมูลภาพยนตร์จากระบบ"
-                  : "กรุณารอสักครู่ ระบบกำลังอัปโหลดข้อมูลและภาพปก"}
+                  ? isCrewAction
+                    ? LOCALIZATION.LOADING.SUB_DELETE_CREW
+                    : LOCALIZATION.LOADING.SUB_DELETE_MOVIE
+                  : isCrewAction
+                    ? LOCALIZATION.LOADING.SUB_SAVE_CREW
+                    : LOCALIZATION.LOADING.SUB_SAVE_MOVIE}
               </p>
             </div>
           </div>
